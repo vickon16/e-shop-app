@@ -1,0 +1,65 @@
+{
+  "name": "@e-shop-app/packages",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "default": "./dist/types/index.js"
+    },
+    "./constants": {
+      "types": "./dist/constants/index.d.ts",
+      "import": "./dist/constants/index.js",
+      "default": "./dist/constants/index.js"
+    },
+    "./env": {
+      "types": "./dist/env/index.d.ts",
+      "import": "./dist/env/index.js",
+      "default": "./dist/env/index.js"
+    },
+    "./error-handler": {
+      "types": "./dist/error-handler/index.d.ts",
+      "import": "./dist/error-handler/index.js",
+      "default": "./dist/error-handler/index.js"
+    },
+    "./mails": {
+      "types": "./dist/mails/index.d.ts",
+      "import": "./dist/mails/index.js",
+      "default": "./dist/mails/index.js"
+    },
+    "./middlewares": {
+      "types": "./dist/middlewares/index.d.ts",
+      "import": "./dist/middlewares/index.js",
+      "default": "./dist/middlewares/index.js"
+    },
+    "./zod-schemas": {
+      "types": "./dist/zod-schemas/index.d.ts",
+      "import": "./dist/zod-schemas/index.js",
+      "default": "./dist/zod-schemas/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js",
+      "default": "./dist/utils/index.js"
+    },
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "import": "./dist/database/index.js",
+      "default": "./dist/database/index.js"
+    },
+    "./libs/redis": {
+      "types": "./dist/libs/redis/index.d.ts",
+      "import": "./dist/libs/redis/index.js",
+      "default": "./dist/libs/redis/index.js"
+    }
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  }
+}
