@@ -21,6 +21,9 @@ import { useState, useTransition } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa6';
 import { GoogleButton } from '@/components/common/GoogleButton';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useBaseMutation } from '@/actions/mutations/base.mutation';
+import { errorToast } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -36,13 +39,23 @@ const LoginPage = () => {
     },
   });
 
-  const isLoading = isPending;
+  const loginMutation = useBaseMutation<TLoginSchema, any>({
+    endpoint: '/auth/login',
+  });
 
   async function onSubmit(data: TLoginSchema) {
     startTransition(async () => {
-      // signInMutation.mutate(data);
+      try {
+        await loginMutation.mutateAsync(data);
+        toast.success('Login Successful');
+        router.push(Routes.home);
+      } catch (error) {
+        errorToast(error, 'Failed to Login. Please try again');
+      }
     });
   }
+
+  const isLoading = isPending || loginMutation.isPending;
 
   return (
     <div className="w-full py-10 min-h-[85vh] bg-accent">

@@ -18,6 +18,8 @@
     "target": "es2022",
     "customConditions": ["@e-shop-app/source"],
     "baseUrl": ".",
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types", "./packages/src/types"],
     "paths": {
       "@e-shop-app/packages/*": ["packages/src/*"]
     }

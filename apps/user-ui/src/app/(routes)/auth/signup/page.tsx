@@ -27,12 +27,14 @@ import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa6';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [showOtpForm, setShowOtpForm] = useState(false);
   const [userData, setUserData] = useState<TCreateUserSchema>();
+  const router = useRouter();
 
   const form = useForm<TCreateUserSchema>({
     resolver: zodResolver(createUserSchema),
@@ -76,9 +78,9 @@ const SignUpPage = () => {
           otp,
         });
 
-        toast.success(response.message, {
-          description: 'You can now log in with your credentials.',
-        });
+        if (response.success) {
+          router.push(Routes.home);
+        }
       } catch (error) {
         errorToast(error, 'Failed to Sign up. Please try again');
       }

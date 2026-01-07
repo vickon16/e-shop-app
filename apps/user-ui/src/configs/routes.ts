@@ -9,6 +9,7 @@ class Routes {
     forgotPassword: `${this.authPrefix}/forgot-password`,
   };
 
+  static profile = `/profile`;
   static wishlist = '/wishlist';
   static cart = '/cart';
   static products = '/products';

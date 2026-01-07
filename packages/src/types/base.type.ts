@@ -1,3 +1,4 @@
+import { RequestHandler } from 'express';
 import { TBaseApiResponse } from 'src/zod-schemas/base.schemas.js';
 
 // api-response.ts
@@ -33,6 +34,7 @@ export interface RouteContract {
   responses?: {
     [statusCode: number]: any;
   };
+  otherMiddlewares?: Array<RequestHandler>;
 }
 
 export type TUserAccountType = 'user' | 'seller';

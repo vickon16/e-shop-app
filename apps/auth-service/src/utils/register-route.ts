@@ -8,12 +8,17 @@ export function registerRoute(
   contract: RouteContract,
   handler: RequestHandler,
 ) {
-  const middleware = [];
+  const validatorMiddlewares = [];
+  const otherMiddlewares = contract.otherMiddlewares || [];
 
   if (contract.request?.body) {
-    middleware.push(validate(contract.request.body));
+    validatorMiddlewares.push(validate(contract.request.body));
   }
 
-  router[contract.method](contract.routePath, ...middleware, handler);
+  router[contract.method](
+    contract.routePath,
+    [...validatorMiddlewares, ...otherMiddlewares],
+    handler,
+  );
   registerContract(contract);
 }

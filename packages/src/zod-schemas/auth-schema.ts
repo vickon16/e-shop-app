@@ -59,6 +59,21 @@ export const resetPasswordSchema = verifyUserSchema
 
 export type TResetPasswordSchema = z.infer<typeof resetPasswordSchema>;
 
+export const newPasswordSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: passwordSchema,
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  })
+  .openapi({
+    title: 'NewPasswordSchema',
+  });
+
+export type TNewPasswordSchema = z.infer<typeof newPasswordSchema>;
+
 export const verifyOtpSchema = verifyUserSchema
   .pick({ email: true, otp: true })
   .openapi({

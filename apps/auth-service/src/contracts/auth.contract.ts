@@ -1,3 +1,4 @@
+import { isAuthenticatedMiddleware } from '@e-shop-app/packages/middlewares';
 import { RouteContract } from '@e-shop-app/packages/types/base.type';
 import {
   baseApiResponse,
@@ -94,4 +95,19 @@ export const resendOtpContract = {
       },
     ],
   },
+} as const satisfies RouteContract;
+
+export const refreshTokenContract = {
+  ...baseContract,
+  method: 'post',
+  path: '/api/auth/refresh-token',
+  routePath: '/refresh-token',
+} as const satisfies RouteContract;
+
+export const getUserContract = {
+  ...baseContract,
+  method: 'get',
+  path: '/api/auth/get-me',
+  routePath: '/get-me',
+  otherMiddlewares: [isAuthenticatedMiddleware],
 } as const satisfies RouteContract;

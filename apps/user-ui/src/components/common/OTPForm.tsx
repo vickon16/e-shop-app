@@ -20,23 +20,24 @@ import { LuDot } from 'react-icons/lu';
 import { toast } from 'sonner';
 
 type Props = {
-  userData: Pick<TCreateUserSchema, 'name' | 'email'>;
+  userData: Pick<TCreateUserSchema, 'email'> & { name?: string };
   verifyOtp: (otp: string) => Promise<void>;
   isVerifying: boolean;
+  actionButtonText?: string;
 };
 
 const slotClass = 'size-10! sm:size-14! text-xl border-primary/50 border-y-2';
 const TIMER_DURATION = 60; // in seconds
 
 const OTPForm = (props: Props) => {
-  const { userData, verifyOtp, isVerifying } = props;
+  const { userData, verifyOtp, isVerifying, actionButtonText } = props;
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const { countdown, setCountDown } = useCountDownTimer();
   const [isPending, startTransition] = useTransition();
 
   const resendOtpMutation = useBaseMutation<TEmailSchema, any>({
-    endpoint: `/auth/resend-otp?withUserName=${userData.name}`,
+    endpoint: `/auth/resend-otp${userData.name ? `?withUserName=${userData.name}` : ''}`,
   });
 
   const handleVerify = async () => {
@@ -138,7 +139,7 @@ const OTPForm = (props: Props) => {
             onClick={handleVerify}
             isLoading={isVerifying || isLoadingResend}
           >
-            Verify
+            {actionButtonText || 'Verify'}
           </Button>
         </div>
       </div>

@@ -7,11 +7,15 @@ import {
   verifyUserController,
   verifyOtpController,
   resendOtpController,
+  refreshTokenController,
+  getUserController,
 } from '../controllers/auth.controller';
 import { registerRoute } from '../utils/register-route';
 import {
   forgotPasswordContract,
+  getUserContract,
   loginUserContract,
+  refreshTokenContract,
   resendOtpContract,
   resetPasswordContract,
   userRegistrationContract,
@@ -41,5 +45,11 @@ registerRoute(authRouter, verifyOtpContract, verifyOtpController);
 
 // resend otp
 registerRoute(authRouter, resendOtpContract, resendOtpController);
+
+// refresh token
+registerRoute(authRouter, refreshTokenContract, refreshTokenController);
+
+// Get logged in user
+registerRoute(authRouter, getUserContract, getUserController);
 
 export default authRouter;

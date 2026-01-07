@@ -21,6 +21,7 @@ import { sendEmail } from '@e-shop-app/packages/mails';
 import { TUserAccountType } from '@e-shop-app/packages/types/base.type';
 import { sendSuccess } from '@e-shop-app/packages/utils';
 import { Request, Response } from 'express';
+import { getUserBy } from './user.helpers';
 
 export const validateRegistrationData = (
   data: TCreateUserSchema,
@@ -199,9 +200,7 @@ export const handleSendOtp = async (
   // Find user or seller by email
 
   if (!userName) {
-    const existingUser = await appDb.query.usersTable.findFirst({
-      where: eq(usersTable.email, email),
-    });
+    const existingUser = await getUserBy('email', email);
 
     if (!existingUser) {
       throw new NotFoundError(`${userType} with this email does not exist.`);

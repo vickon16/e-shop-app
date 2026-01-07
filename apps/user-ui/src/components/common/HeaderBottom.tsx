@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import React, { useState } from 'react';
 import { LuAlignLeft, LuChevronDown } from 'react-icons/lu';
-import { BaseHeader } from './Header';
+import { BaseHeader } from './BaseHeader';
 
 export const HeaderBottom = () => {
   const [show, setShow] = useState(false);

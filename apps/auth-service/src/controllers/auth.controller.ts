@@ -1,14 +1,16 @@
 import { appDb, eq, usersTable } from '@e-shop-app/packages/database';
 import {
+  AuthError,
   ForbiddenError,
   NotFoundError,
   ValidationError,
 } from '@e-shop-app/packages/error-handler';
-import { JwtPayload } from '@e-shop-app/packages/types';
+import { JwtPayload, TUser } from '@e-shop-app/packages/types';
 import {
   hashPassword,
   sendSuccess,
   signJwtToken,
+  verifyJwtToken,
   verifyPassword,
 } from '@e-shop-app/packages/utils';
 import {
@@ -28,6 +30,7 @@ import {
   verifyOtp,
 } from '../utils/helpers/auth.helpers';
 import { setCookie } from '../utils/helpers/cookies.helper';
+import { getUserBy } from '../utils/helpers/user.helpers';
 
 // Register a new user
 
@@ -42,9 +45,7 @@ export const userRegistrationController = async (
 
     const { name, email } = body;
 
-    const existingUser = await appDb.query.usersTable.findFirst({
-      where: eq(usersTable.email, email),
-    });
+    const existingUser = await getUserBy('email', email);
 
     if (existingUser) {
       throw new ValidationError('Email is already registered');
@@ -72,9 +73,7 @@ export const verifyUserController = async (
     const body = req.body as TVerifyUserSchema;
     const { name, email, otp, password } = body;
 
-    const existingUser = await appDb.query.usersTable.findFirst({
-      where: eq(usersTable.email, email),
-    });
+    const existingUser = await getUserBy('email', email);
 
     if (existingUser) {
       throw new ValidationError('Email is already registered');
@@ -87,11 +86,24 @@ export const verifyUserController = async (
     const hashedPassword = await hashPassword(password);
 
     // Create new user
-    await appDb.insert(usersTable).values({
-      name,
-      email,
-      password: hashedPassword,
-      emailVerified: new Date().toISOString(),
+    const newUser = await appDb
+      .insert(usersTable)
+      .values({
+        name,
+        email,
+        password: hashedPassword,
+        emailVerified: new Date().toISOString(),
+      })
+      .returning();
+
+    if (newUser.length === 0) {
+      throw new ValidationError('Failed to create user. Please try again.');
+    }
+
+    generateToken(res, {
+      userId: newUser[0].id,
+      email: newUser[0].email,
+      role: 'user',
     });
 
     sendSuccess(res, null, 'User registered successfully');
@@ -110,9 +122,7 @@ export const loginUserController = async (
     const body = req.body as TLoginSchema;
     const { email, password } = body;
 
-    const existingUser = await appDb.query.usersTable.findFirst({
-      where: eq(usersTable.email, email),
-    });
+    const existingUser = await getUserBy('email', email, true);
 
     if (!existingUser) {
       throw new NotFoundError('M: Invalid email or password.');
@@ -137,13 +147,7 @@ export const loginUserController = async (
       role: 'user',
     };
 
-    const accessToken = signJwtToken(payload, 'access');
-    const refreshToken = signJwtToken(payload, 'refresh');
-
-    // Store the refresh and access token in an httpOnly secure cookie
-
-    setCookie(res, 'access_token', accessToken);
-    setCookie(res, 'refresh_token', refreshToken);
+    generateToken(res, payload);
 
     sendSuccess(
       res,
@@ -158,6 +162,22 @@ export const loginUserController = async (
     console.log('Error in loginUser:', error);
     return next(error);
   }
+};
+
+const generateToken = (
+  res: Response,
+  payload: JwtPayload,
+  noRefreshToken?: boolean,
+) => {
+  // Store the refresh and access token in an httpOnly secure cookie
+
+  const accessToken = signJwtToken(payload, 'access');
+  setCookie(res, 'access_token', accessToken);
+
+  if (noRefreshToken) return;
+
+  const refreshToken = signJwtToken(payload, 'refresh');
+  setCookie(res, 'refresh_token', refreshToken);
 };
 
 export const userForgotPasswordController = async (
@@ -183,9 +203,7 @@ export const resetPasswordController = async (
     const { email, newPassword, otp } = body;
 
     // Find user or seller by email
-    const existingUser = await appDb.query.usersTable.findFirst({
-      where: eq(usersTable.email, email),
-    });
+    const existingUser = await getUserBy('email', email, true);
 
     if (!existingUser) {
       throw new NotFoundError(`User with this email does not exist.`);
@@ -238,9 +256,7 @@ export const verifyOtpController = async (
     const { email, otp } = body;
 
     // Find user or seller by email
-    const existingUser = await appDb.query.usersTable.findFirst({
-      where: eq(usersTable.email, email),
-    });
+    const existingUser = await getUserBy('email', email);
 
     if (!existingUser) {
       throw new NotFoundError(`User with this email does not exist.`);
@@ -263,6 +279,74 @@ export const resendOtpController = async (
 ) => {
   try {
     await handleSendOtp(req, res, 'resend-otp');
+  } catch (error) {
+    console.log('Error in resendOtpController:', error);
+    return next(error);
+  }
+};
+
+export const refreshTokenController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const refreshToken = req.cookies['refresh_token'];
+
+    if (!refreshToken) {
+      throw new ForbiddenError('Refresh token is missing');
+    }
+
+    // Verify refresh token
+    const decoded = verifyJwtToken(refreshToken, 'refresh');
+
+    let currentUser: TUser | undefined;
+
+    if (decoded.role === 'user') {
+      currentUser = await getUserBy('id', decoded.userId);
+    }
+
+    if (!currentUser) {
+      throw new AuthError('User not found');
+    }
+
+    // Generate access token
+    generateToken(
+      res,
+      {
+        userId: decoded.userId,
+        email: decoded.email,
+        role: decoded.role,
+      },
+      true,
+    );
+
+    sendSuccess(res, null, 'Token refreshed successfully');
+  } catch (error) {
+    console.log('Error in resendOtpController:', error);
+    return next(error);
+  }
+};
+
+// Get logged in user
+export const getUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const currentUser = await getUserBy('id', authUser.userId);
+
+    if (!currentUser) {
+      throw new NotFoundError('User not found');
+    }
+
+    sendSuccess(res, currentUser, 'User retrieved successfully');
   } catch (error) {
     console.log('Error in resendOtpController:', error);
     return next(error);
