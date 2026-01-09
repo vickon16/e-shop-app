@@ -6,8 +6,8 @@
     "dev": "npx nx run-many --target=serve --all",
     "dev:gateway": "nx serve api-gateway --output-style=stream",
     "dev:auth": "nx serve auth-service --output-style=stream",
-    "dev:user-ui": "npx nx run-many --target=dev --all --projects=user-ui  --output-style=stream",
-    "dev:seller-ui": "npx nx run-many --target=dev --all --projects=seller-ui  --output-style=stream",
+    "dev:user": "npx nx run-many --target=dev --all --projects=user-ui  --output-style=stream",
+    "dev:seller": "npx nx run-many --target=dev --all --projects=seller-ui  --output-style=stream",
     "build:packages": "nx build packages",
     "start": "npx nx serve api-gateway",
     "build": "npx nx build api-gateway",
@@ -44,6 +44,8 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@babel/core": "^7.14.5",
+    "@babel/preset-react": "^7.14.5",
     "@eslint/js": "^9.8.0",
     "@next/eslint-plugin-next": "^16.0.1",
     "@nx/docker": "22.3.3",
@@ -55,10 +57,14 @@
     "@nx/js": "22.3.3",
     "@nx/next": "^22.3.3",
     "@nx/node": "22.3.3",
+    "@nx/react": "22.3.3",
+    "@nx/rollup": "22.3.3",
     "@nx/web": "22.3.3",
     "@nx/webpack": "22.3.3",
     "@nx/workspace": "22.3.3",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",
+    "@rollup/plugin-url": "^8.0.2",
+    "@svgr/rollup": "^8.1.0",
     "@svgr/webpack": "^8.0.1",
     "@swc-node/register": "~1.9.1",
     "@swc/cli": "~0.6.0",
@@ -79,6 +85,7 @@
     "@types/react-dom": "^19.0.0",
     "@types/swagger-ui-express": "^4.1.8",
     "autoprefixer": "10.4.13",
+    "core-js": "^3.36.1",
     "drizzle-kit": "^0.31.8",
     "esbuild": "^0.19.2",
     "eslint": "^9.8.0",
@@ -95,6 +102,7 @@
     "postcss": "8.4.38",
     "prettier": "~3.6.2",
     "react-refresh": "^0.10.0",
+    "rollup": "^4.14.0",
     "tailwindcss": "^4.1.18",
     "ts-jest": "^29.4.0",
     "ts-node": "10.9.1",
@@ -105,6 +113,7 @@
   },
   "workspaces": [
     "apps/*",
-    "packages"
+    "packages",
+    "shared"
   ]
 }

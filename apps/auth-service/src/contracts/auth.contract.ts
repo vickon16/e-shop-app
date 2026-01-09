@@ -2,6 +2,7 @@ import { isAuthenticatedMiddleware } from '@e-shop-app/packages/middlewares';
 import { RouteContract } from '@e-shop-app/packages/types/base.type';
 import {
   baseApiResponse,
+  createSellerSchema,
   createUserSchema,
   emailSchema,
   loginSchema,
@@ -24,6 +25,16 @@ export const userRegistrationContract = {
   routePath: '/user-registration',
   request: {
     body: createUserSchema,
+  },
+} as const satisfies RouteContract;
+
+export const sellerRegistrationContract = {
+  ...baseContract,
+  method: 'post',
+  path: '/api/auth/seller-registration',
+  routePath: '/seller-registration',
+  request: {
+    body: createSellerSchema,
   },
 } as const satisfies RouteContract;
 

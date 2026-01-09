@@ -1,7 +1,4 @@
-import {
-  TCreateUserSchema,
-  TEmailSchema,
-} from '@e-shop-app/packages/zod-schemas';
+import { TEmailSchema } from '@e-shop-app/packages/zod-schemas';
 import crypto from 'crypto';
 
 import {
@@ -11,7 +8,6 @@ import {
   OTP_COOL_EXPIRATION_MINUTES,
   OTP_EXPIRATION_MINUTES,
 } from '@e-shop-app/packages/constants';
-import { appDb, eq, usersTable } from '@e-shop-app/packages/database';
 import {
   NotFoundError,
   ValidationError,
@@ -23,20 +19,14 @@ import { sendSuccess } from '@e-shop-app/packages/utils';
 import { Request, Response } from 'express';
 import { getUserBy } from './user.helpers';
 
-export const validateRegistrationData = (
-  data: TCreateUserSchema,
-  userType: TUserAccountType,
+export const startOtpCheckAndSend = async (
+  name: string,
+  email: string,
+  template: string,
 ) => {
-  const { name, email, password, phoneNumber, country } = data;
-
-  if (
-    !name ||
-    !email ||
-    !password ||
-    (userType === 'seller' && (!phoneNumber || !country))
-  ) {
-    throw new ValidationError('Missing required registration fields');
-  }
+  await checkOTPRestrictions(email);
+  await trackOtpRequests(email);
+  await sendOtp(name, email, template);
 };
 
 export const checkOTPRestrictions = async (email: string) => {
@@ -208,15 +198,10 @@ export const handleSendOtp = async (
     userName = existingUser.name;
   }
 
-  // Check OTP restrictions and track requests
-  await checkOTPRestrictions(email);
-  await trackOtpRequests(email);
-
   const emailTemplate =
     type === 'forgot-password' ? 'user-forgot-password' : 'user-resend-otp';
 
-  // Send OTP email
-  await sendOtp(userName, email, emailTemplate);
+  await startOtpCheckAndSend(userName, email, emailTemplate);
 
   sendSuccess(res, null, 'OTP sent to your email');
 };

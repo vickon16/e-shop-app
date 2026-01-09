@@ -22,28 +22,22 @@ import {
 } from '@e-shop-app/packages/zod-schemas';
 import { NextFunction, Request, Response } from 'express';
 import {
-  checkOTPRestrictions,
   handleSendOtp,
-  sendOtp,
-  trackOtpRequests,
-  validateRegistrationData,
+  startOtpCheckAndSend,
   verifyOtp,
 } from '../utils/helpers/auth.helpers';
 import { setCookie } from '../utils/helpers/cookies.helper';
+import { getSellerBy } from '../utils/helpers/seller.helpers';
 import { getUserBy } from '../utils/helpers/user.helpers';
 
 // Register a new user
-
 export const userRegistrationController = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const body = req.body as TCreateUserSchema;
-    validateRegistrationData(body, 'user');
-
-    const { name, email } = body;
+    const { name, email } = req.body as TCreateUserSchema;
 
     const existingUser = await getUserBy('email', email);
 
@@ -52,13 +46,36 @@ export const userRegistrationController = async (
     }
 
     // Check OTP restrictions and track requests
-    await checkOTPRestrictions(email);
-    await trackOtpRequests(email);
-    await sendOtp(name, email, 'user-activation-email');
+    await startOtpCheckAndSend(name, email, 'user-activation-email');
 
     sendSuccess(res, null, 'OTP sent to your email for verification');
   } catch (error) {
     console.log('Error in userRegistration:', error);
+    return next(error);
+  }
+};
+
+// Register a new seller
+export const sellerRegistrationController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { name, email } = req.body as TCreateUserSchema;
+
+    const existingSeller = await getSellerBy('email', email);
+
+    if (existingSeller) {
+      throw new ValidationError('Email is already registered for this seller');
+    }
+
+    // Check OTP restrictions and track requests
+    await startOtpCheckAndSend(name, email, 'seller-activation-email');
+
+    sendSuccess(res, null, 'OTP sent to your email for verification');
+  } catch (error) {
+    console.log('Error in sellerRegistration:', error);
     return next(error);
   }
 };

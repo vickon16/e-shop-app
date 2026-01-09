@@ -57,7 +57,7 @@ const LoginPage = () => {
   const isLoading = isPending || loginMutation.isPending;
 
   return (
-    <div className="w-full py-10 min-h-[85vh] bg-accent">
+    <div className="w-full py-10 min-h-screen bg-accent">
       <h1 className="text-4xl font-poppins font-semibold text-foreground text-center">
         Login
       </h1>

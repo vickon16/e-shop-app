@@ -9,6 +9,7 @@ import {
   resendOtpController,
   refreshTokenController,
   getUserController,
+  sellerRegistrationController,
 } from '../controllers/auth.controller';
 import { registerRoute } from '../utils/register-route';
 import {
@@ -18,6 +19,7 @@ import {
   refreshTokenContract,
   resendOtpContract,
   resetPasswordContract,
+  sellerRegistrationContract,
   userRegistrationContract,
   verifyOtpContract,
   verifyUserContract,
@@ -27,6 +29,13 @@ const authRouter = express.Router();
 
 // register user
 registerRoute(authRouter, userRegistrationContract, userRegistrationController);
+
+// register seller
+registerRoute(
+  authRouter,
+  sellerRegistrationContract,
+  sellerRegistrationController,
+);
 
 // verify user and create account
 registerRoute(authRouter, verifyUserContract, verifyUserController);

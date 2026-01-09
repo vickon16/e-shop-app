@@ -15,10 +15,6 @@ export const createUserSchema = z
     }),
     email: emailSchema.shape.email,
     password: passwordSchema,
-    phoneNumber: phoneNumberSchema.optional(),
-    country: requiredString('Country is required', 2, 56).optional().openapi({
-      example: 'United States',
-    }),
   })
   .openapi({
     title: 'CreateUserSchema',
@@ -26,6 +22,20 @@ export const createUserSchema = z
   });
 
 export type TCreateUserSchema = z.infer<typeof createUserSchema>;
+
+export const createSellerSchema = createUserSchema
+  .extend({
+    phoneNumber: phoneNumberSchema,
+    country: requiredString('Country is required', 2, 56).openapi({
+      example: 'United States',
+    }),
+  })
+  .openapi({
+    title: 'CreateSellerSchema',
+    description: 'Schema for user registration',
+  });
+
+export type TCreateSellerSchema = z.infer<typeof createSellerSchema>;
 
 export const verifyUserSchema = createUserSchema
   .pick({ name: true, email: true, password: true })
