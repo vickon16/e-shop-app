@@ -1,8 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import { GET_USER } from '../base-action-constants';
 import { axiosInstance } from '@/lib/axios';
-import { TBaseServerResponse } from '@/types';
-import { TUser } from '@e-shop-app/packages/types';
+import { TUser, TBaseServerResponse } from '@e-shop-app/packages/types';
 
 export const getUserOptions = () => {
   return queryOptions({

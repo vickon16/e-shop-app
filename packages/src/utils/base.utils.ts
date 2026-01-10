@@ -6,7 +6,7 @@ import { z } from 'zod';
 export function sendSuccess<T>(
   res: Response,
   data: T,
-  message?: string,
+  message: string,
   statusCode = 200,
 ) {
   const response: ApiSuccessResponse<T> = {

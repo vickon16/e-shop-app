@@ -1,4 +1,9 @@
-import { appDb, eq, usersTable } from '@e-shop-app/packages/database';
+import {
+  appDb,
+  eq,
+  shopsTable,
+  usersTable,
+} from '@e-shop-app/packages/database';
 import {
   AuthError,
   ForbiddenError,
@@ -9,24 +14,25 @@ import { JwtPayload, TUser } from '@e-shop-app/packages/types';
 import {
   hashPassword,
   sendSuccess,
-  signJwtToken,
   verifyJwtToken,
   verifyPassword,
 } from '@e-shop-app/packages/utils';
 import {
+  TCreateShopSchema,
   TCreateUserSchema,
   TLoginSchema,
   TResetPasswordSchema,
   TVerifyOtpSchema,
-  TVerifyUserSchema,
 } from '@e-shop-app/packages/zod-schemas';
 import { NextFunction, Request, Response } from 'express';
 import {
+  generateToken,
+  handleBaseVerifyAccount,
   handleSendOtp,
   startOtpCheckAndSend,
   verifyOtp,
 } from '../utils/helpers/auth.helpers';
-import { setCookie } from '../utils/helpers/cookies.helper';
+
 import { getSellerBy } from '../utils/helpers/seller.helpers';
 import { getUserBy } from '../utils/helpers/user.helpers';
 
@@ -87,45 +93,23 @@ export const verifyUserController = async (
   next: NextFunction,
 ) => {
   try {
-    const body = req.body as TVerifyUserSchema;
-    const { name, email, otp, password } = body;
-
-    const existingUser = await getUserBy('email', email);
-
-    if (existingUser) {
-      throw new ValidationError('Email is already registered');
-    }
-
-    // Check OTP restrictions and track requests
-    await verifyOtp(email, otp);
-
-    // Hash password
-    const hashedPassword = await hashPassword(password);
-
-    // Create new user
-    const newUser = await appDb
-      .insert(usersTable)
-      .values({
-        name,
-        email,
-        password: hashedPassword,
-        emailVerified: new Date().toISOString(),
-      })
-      .returning();
-
-    if (newUser.length === 0) {
-      throw new ValidationError('Failed to create user. Please try again.');
-    }
-
-    generateToken(res, {
-      userId: newUser[0].id,
-      email: newUser[0].email,
-      role: 'user',
-    });
-
-    sendSuccess(res, null, 'User registered successfully');
+    await handleBaseVerifyAccount(req, res, 'user');
   } catch (error) {
     console.log('Error in verifyUser:', error);
+    return next(error);
+  }
+};
+
+// Verify user with OTP
+export const verifySellerController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await handleBaseVerifyAccount(req, res, 'seller');
+  } catch (error) {
+    console.log('Error in verifySeller:', error);
     return next(error);
   }
 };
@@ -179,22 +163,6 @@ export const loginUserController = async (
     console.log('Error in loginUser:', error);
     return next(error);
   }
-};
-
-const generateToken = (
-  res: Response,
-  payload: JwtPayload,
-  noRefreshToken?: boolean,
-) => {
-  // Store the refresh and access token in an httpOnly secure cookie
-
-  const accessToken = signJwtToken(payload, 'access');
-  setCookie(res, 'access_token', accessToken);
-
-  if (noRefreshToken) return;
-
-  const refreshToken = signJwtToken(payload, 'refresh');
-  setCookie(res, 'refresh_token', refreshToken);
 };
 
 export const userForgotPasswordController = async (
@@ -366,6 +334,32 @@ export const getUserController = async (
     sendSuccess(res, currentUser, 'User retrieved successfully');
   } catch (error) {
     console.log('Error in resendOtpController:', error);
+    return next(error);
+  }
+};
+
+export const createShopController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const body = req.body as TCreateShopSchema;
+
+    const newShop = await appDb
+      .insert(shopsTable)
+      .values({
+        ...body,
+      })
+      .returning();
+
+    if (newShop.length === 0) {
+      throw new Error('Failed to create shop');
+    }
+
+    sendSuccess(res, newShop[0], 'Shop created successfully');
+  } catch (error) {
+    console.log('Error in createShopController:', error);
     return next(error);
   }
 };

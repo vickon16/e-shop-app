@@ -1,5 +1,5 @@
 import { appDb, eq, usersTable } from '@e-shop-app/packages/database';
-import { TUser } from '@e-shop-app/packages/types';
+import { TUserWithPassword } from '@e-shop-app/packages/types';
 
 export const getUserBy = async (
   type: 'email' | 'id',
@@ -13,5 +13,5 @@ export const getUserBy = async (
     },
   });
 
-  return currentUser as TUser | undefined;
+  return currentUser as TUserWithPassword | undefined;
 };

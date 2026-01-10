@@ -24,7 +24,6 @@ export const shopsTable = pgTable('shops', {
   website: text('website'),
   socialLinks: jsonb('social_links')
     .$type<{ [key: string]: string }>()
-    .notNull()
     .default({}),
   ratings: real('ratings').notNull().default(0),
   sellerId: uuid('seller_id').unique().notNull(),

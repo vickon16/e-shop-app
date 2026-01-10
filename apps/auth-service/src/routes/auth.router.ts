@@ -10,9 +10,12 @@ import {
   refreshTokenController,
   getUserController,
   sellerRegistrationController,
+  verifySellerController,
+  createShopController,
 } from '../controllers/auth.controller';
 import { registerRoute } from '../utils/register-route';
 import {
+  createShopContract,
   forgotPasswordContract,
   getUserContract,
   loginUserContract,
@@ -22,6 +25,7 @@ import {
   sellerRegistrationContract,
   userRegistrationContract,
   verifyOtpContract,
+  verifySellerContract,
   verifyUserContract,
 } from '../contracts/auth.contract';
 
@@ -39,6 +43,9 @@ registerRoute(
 
 // verify user and create account
 registerRoute(authRouter, verifyUserContract, verifyUserController);
+
+// verify seller and create account
+registerRoute(authRouter, verifySellerContract, verifySellerController);
 
 // login user
 registerRoute(authRouter, loginUserContract, loginUserController);
@@ -60,5 +67,8 @@ registerRoute(authRouter, refreshTokenContract, refreshTokenController);
 
 // Get logged in user
 registerRoute(authRouter, getUserContract, getUserController);
+
+// create shop
+registerRoute(authRouter, createShopContract, createShopController);
 
 export default authRouter;

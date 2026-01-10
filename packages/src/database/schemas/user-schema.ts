@@ -33,9 +33,10 @@ export const sellersTable = pgTable('sellers', {
   country: text('country').notNull(),
   password: text('password').notNull(),
   stripeId: text('stripe_id'),
-  shopId: uuid('shop_id')
-    .notNull()
-    .references(() => shopsTable.id, { onDelete: 'cascade' }),
+  shopId: uuid('shop_id').references(() => shopsTable.id, {
+    onDelete: 'cascade',
+  }),
+  emailVerified: text('email_verified'),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

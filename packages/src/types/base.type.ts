@@ -1,6 +1,20 @@
 import { RequestHandler } from 'express';
 import { TBaseApiResponse } from 'src/zod-schemas/base.schemas.js';
 
+export type TTableMeta = {
+  page: number;
+  limit: number;
+  itemCount: number;
+  pageCount: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+};
+
+export type TBaseServerResponse<T> = TBaseApiResponse & {
+  data: T;
+  meta?: TTableMeta;
+};
+
 // api-response.ts
 export interface ApiSuccessResponse<T = unknown> extends TBaseApiResponse {
   data: T;

@@ -3,11 +3,13 @@ import { RouteContract } from '@e-shop-app/packages/types/base.type';
 import {
   baseApiResponse,
   createSellerSchema,
+  createShopSchema,
   createUserSchema,
   emailSchema,
   loginSchema,
   resetPasswordSchema,
   verifyOtpSchema,
+  verifySellerSchema,
   verifyUserSchema,
 } from '@e-shop-app/packages/zod-schemas';
 
@@ -51,6 +53,19 @@ export const verifyUserContract = {
   },
 } as const satisfies RouteContract;
 
+export const verifySellerContract = {
+  ...baseContract,
+  method: 'post',
+  path: '/api/auth/verify-seller',
+  routePath: '/verify-seller',
+  request: {
+    body: verifySellerSchema,
+  },
+  responses: {
+    201: baseApiResponse,
+  },
+} as const satisfies RouteContract;
+
 export const loginUserContract = {
   ...baseContract,
   method: 'post',
@@ -68,6 +83,13 @@ export const forgotPasswordContract = {
   routePath: '/forgot-password',
   request: {
     body: emailSchema,
+    query: [
+      {
+        name: 'asSeller',
+        schema: { type: 'string' },
+        in: 'query',
+      },
+    ],
   },
 } as const satisfies RouteContract;
 
@@ -104,6 +126,11 @@ export const resendOtpContract = {
         schema: { type: 'string' },
         in: 'query',
       },
+      {
+        name: 'asSeller',
+        schema: { type: 'string' },
+        in: 'query',
+      },
     ],
   },
 } as const satisfies RouteContract;
@@ -121,4 +148,17 @@ export const getUserContract = {
   path: '/api/auth/get-me',
   routePath: '/get-me',
   otherMiddlewares: [isAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const createShopContract = {
+  ...baseContract,
+  method: 'post',
+  path: '/api/auth/create-shop',
+  routePath: '/create-shop',
+  request: {
+    body: createShopSchema,
+  },
+  responses: {
+    201: baseApiResponse,
+  },
 } as const satisfies RouteContract;

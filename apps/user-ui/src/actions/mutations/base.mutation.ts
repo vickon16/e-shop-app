@@ -1,5 +1,5 @@
 import { axiosInstance } from '@/lib/axios';
-import { type TBaseServerResponse } from '@/types';
+import { TBaseServerResponse } from '@e-shop-app/packages/types';
 import { useMutation } from '@tanstack/react-query';
 import { AxiosRequestConfig } from 'axios';
 

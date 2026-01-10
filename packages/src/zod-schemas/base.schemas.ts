@@ -25,7 +25,7 @@ export const baseApiResponse = z.object({
     description: 'Indicates if the operation was successful',
     example: true,
   }),
-  message: z.string().optional().openapi({
+  message: z.string().openapi({
     description: 'A descriptive message about the response',
   }),
 });

@@ -1,4 +1,9 @@
-import { TEmailSchema } from '@e-shop-app/packages/zod-schemas';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import {
+  TEmailSchema,
+  TVerifySellerSchema,
+  TVerifyUserSchema,
+} from '@e-shop-app/packages/zod-schemas';
 import crypto from 'crypto';
 
 import {
@@ -8,15 +13,23 @@ import {
   OTP_COOL_EXPIRATION_MINUTES,
   OTP_EXPIRATION_MINUTES,
 } from '@e-shop-app/packages/constants';
+import { appDb, sellersTable, usersTable } from '@e-shop-app/packages/database';
 import {
   NotFoundError,
   ValidationError,
 } from '@e-shop-app/packages/error-handler';
 import { constructOtpWithEmail, redis } from '@e-shop-app/packages/libs/redis';
 import { sendEmail } from '@e-shop-app/packages/mails';
+import { JwtPayload } from '@e-shop-app/packages/types';
 import { TUserAccountType } from '@e-shop-app/packages/types/base.type';
-import { sendSuccess } from '@e-shop-app/packages/utils';
+import {
+  hashPassword,
+  sendSuccess,
+  signJwtToken,
+} from '@e-shop-app/packages/utils';
 import { Request, Response } from 'express';
+import { setCookie } from './cookies.helper';
+import { getSellerBy } from './seller.helpers';
 import { getUserBy } from './user.helpers';
 
 export const startOtpCheckAndSend = async (
@@ -181,16 +194,22 @@ export const handleSendOtp = async (
   req: Request,
   res: Response,
   type: 'forgot-password' | 'resend-otp',
-  userType: TUserAccountType = 'user',
 ) => {
   const body = req.body as TEmailSchema;
+  const userType: TUserAccountType =
+    req.query['asSeller'] === 'true' ? 'seller' : 'user';
   let userName = req.query['withUserName'] as string | undefined;
   const { email } = body;
 
   // Find user or seller by email
 
   if (!userName) {
-    const existingUser = await getUserBy('email', email);
+    let existingUser: { name: string } | undefined;
+    if (userType === 'seller') {
+      existingUser = await getSellerBy('email', email);
+    } else {
+      existingUser = await getUserBy('email', email);
+    }
 
     if (!existingUser) {
       throw new NotFoundError(`${userType} with this email does not exist.`);
@@ -199,9 +218,105 @@ export const handleSendOtp = async (
   }
 
   const emailTemplate =
-    type === 'forgot-password' ? 'user-forgot-password' : 'user-resend-otp';
+    type === 'forgot-password'
+      ? userType === 'user'
+        ? 'user-forgot-password'
+        : 'seller-forgot-password'
+      : userType === 'user'
+        ? 'user-resend-otp'
+        : 'seller-resend-otp';
 
   await startOtpCheckAndSend(userName, email, emailTemplate);
 
   sendSuccess(res, null, 'OTP sent to your email');
+};
+
+export const handleBaseVerifyAccount = async (
+  req: Request,
+  res: Response,
+  userType: TUserAccountType,
+) => {
+  const body = req.body as TVerifySellerSchema | TVerifyUserSchema;
+  const { name, email, otp, password } = body;
+
+  let existingAccount;
+  if (userType === 'seller') {
+    existingAccount = await getSellerBy('email', email);
+  } else {
+    existingAccount = await getUserBy('email', email);
+  }
+
+  if (existingAccount) {
+    throw new ValidationError(
+      'Email is already registered for this account type',
+    );
+  }
+
+  // Check OTP restrictions and track requests
+  await verifyOtp(email, otp);
+
+  // Hash password
+  const hashedPassword = await hashPassword(password);
+
+  // Create new account
+  let newAccount: { id: string; email: string; password: string | null }[] = [];
+
+  const baseInsertData = {
+    name,
+    email,
+    password: hashedPassword,
+    emailVerified: new Date().toISOString(),
+  };
+
+  if (userType === 'seller') {
+    const newBody = body as TVerifySellerSchema;
+
+    newAccount = await appDb
+      .insert(sellersTable)
+      .values({
+        ...baseInsertData,
+        phoneNumber: newBody.phoneNumber,
+        country: newBody.country,
+      })
+      .returning();
+  } else {
+    newAccount = await appDb
+      .insert(usersTable)
+      .values(baseInsertData)
+      .returning();
+  }
+
+  if (newAccount.length === 0) {
+    throw new ValidationError(
+      `Failed to create ${userType} account. Please try again.`,
+    );
+  }
+
+  if (userType === 'user') {
+    generateToken(res, {
+      userId: newAccount[0].id,
+      email: newAccount[0].email,
+      role: userType,
+    });
+  }
+
+  const { password: _, ...accountWithoutPassword } = newAccount[0];
+
+  sendSuccess(res, accountWithoutPassword, 'User registered successfully');
+};
+
+export const generateToken = (
+  res: Response,
+  payload: JwtPayload,
+  noRefreshToken?: boolean,
+) => {
+  // Store the refresh and access token in an httpOnly secure cookie
+
+  const accessToken = signJwtToken(payload, 'access');
+  setCookie(res, 'access_token', accessToken);
+
+  if (noRefreshToken) return;
+
+  const refreshToken = signJwtToken(payload, 'refresh');
+  setCookie(res, 'refresh_token', refreshToken);
 };

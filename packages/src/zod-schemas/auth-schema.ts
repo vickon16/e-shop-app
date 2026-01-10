@@ -38,13 +38,20 @@ export const createSellerSchema = createUserSchema
 export type TCreateSellerSchema = z.infer<typeof createSellerSchema>;
 
 export const verifyUserSchema = createUserSchema
-  .pick({ name: true, email: true, password: true })
   .extend({ ...otpSchema.shape })
   .openapi({
     title: 'VerifyUserSchema',
   });
 
 export type TVerifyUserSchema = z.infer<typeof verifyUserSchema>;
+
+export const verifySellerSchema = createSellerSchema
+  .extend({ ...otpSchema.shape })
+  .openapi({
+    title: 'VerifySellerSchema',
+  });
+
+export type TVerifySellerSchema = z.infer<typeof verifySellerSchema>;
 
 export const loginSchema = createUserSchema
   .pick({ email: true, password: true })
@@ -91,3 +98,72 @@ export const verifyOtpSchema = verifyUserSchema
   });
 
 export type TVerifyOtpSchema = z.infer<typeof verifyOtpSchema>;
+
+export const createShopSchema = z
+  .object({
+    name: requiredString('Shop name is required', 2, 100).openapi({
+      description: 'Name of the shop',
+      example: 'Vicy Electronics',
+    }),
+
+    category: requiredString('Category is required', 2, 50).openapi({
+      description: 'Shop category',
+      example: 'Electronics',
+    }),
+
+    bio: z
+      .string()
+      .max(500, 'Bio cannot exceed 500 characters')
+      .optional()
+      .openapi({
+        description: 'Short description of the shop',
+        example: 'We sell premium electronics and accessories',
+      }),
+
+    avatarId: z.uuid().optional().openapi({
+      description: 'Avatar image ID',
+      example: 'b1c7d9b2-2e1d-4a0e-b4c3-9e3c0b2f2a11',
+    }),
+
+    address: requiredString('Address is required', 5, 255).openapi({
+      description: 'Physical address of the shop',
+      example: '12 Admiralty Way, Lekki, Lagos',
+    }),
+
+    coverBanner: z.url('Invalid cover banner URL').optional().openapi({
+      description: 'Cover banner image URL',
+      example: 'https://cdn.example.com/banners/shop.png',
+    }),
+
+    openingHours: z.string().max(255).optional().openapi({
+      description: 'Opening hours of the shop',
+      example: 'Mon–Sat: 9am – 6pm',
+    }),
+
+    website: z.url('Invalid website URL').optional().openapi({
+      description: 'Official shop website',
+      example: 'https://victorelectronics.com',
+    }),
+
+    socialLinks: z
+      .record(z.string(), z.url('Invalid social link URL'))
+      .optional()
+      .openapi({
+        description: 'Social media links',
+        example: {
+          instagram: 'https://instagram.com/vicy',
+          twitter: 'https://twitter.com/vicy',
+        },
+      }),
+
+    sellerId: z.uuid('Invalid seller ID').openapi({
+      description: 'Owner (seller) ID',
+      example: 'e9c1a4a5-6c77-4d89-9f41-2e1f9d5c0d88',
+    }),
+  })
+  .openapi({
+    title: 'ShopCreationSchema',
+    description: 'Schema for creating a new shop',
+  });
+
+export type TCreateShopSchema = z.infer<typeof createShopSchema>;
