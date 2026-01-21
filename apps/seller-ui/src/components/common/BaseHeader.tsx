@@ -1,16 +1,15 @@
 'use client';
 
-import { getUserOptions } from '@/actions/queries/base-queries';
+import { getSellerOptions } from '@/actions/queries/base-queries';
 import { Routes } from '@/configs/routes';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { FaCartPlus, FaRegUser } from 'react-icons/fa';
 import { GoHeart } from 'react-icons/go';
-import { CgProfile } from 'react-icons/cg';
 
 export const BaseHeader = () => {
-  const userQuery = useQuery(getUserOptions());
+  const userQuery = useQuery(getSellerOptions());
   const user = userQuery.data;
   const isLoadingUser = userQuery.isLoading;
   const isLoggedIn = !!user && !isLoadingUser;

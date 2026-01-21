@@ -67,11 +67,60 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --primary-light: 220 80% 75%;
+    --primary: 206 70% 70%;
+    --primary-semi-dark: 206 80% 40%;
+    --primary-dark: 206 90% 25%;
+    --primary-foreground: 210 40% 98%;
+    --primary2: 129 50% 57%;
+    --primary2-dark: 129 53% 37%;
+    /* --primary-background: 125 43% 95%; */
+
+    --secondary: 206 55% 20%;
+    --secondary-foreground: 206 10% 97.5%;
+
+    --card: 206 45% 8.5%;
+    --card-foreground: 206 10% 97.5%;
+
+    --popover: 206 45% 6.5%;
+    --popover-foreground: 206 10% 97.5%;
+
+    --muted: 206 55% 20%;
+    --muted-foreground: 206 20% 65%;
+
+    --accent: 206 65% 40%;
+    --accent-foreground: 206 10% 97.5%;
+
+    --destructive: 0 91% 65%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 206 55% 20%;
+    --input: 206 55% 20%;
+    --ring: 206 70% 60%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
 }
 
 @theme inline {
   --font-poppins: var(--font-poppins);
-  --font-roboto: var(--font-roboto);
 
   /* Colors */
   --color-background: hsl(var(--background));

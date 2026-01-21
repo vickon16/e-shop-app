@@ -15,6 +15,7 @@ import {
 } from '@e-shop-app/packages/constants';
 import { appDb, sellersTable, usersTable } from '@e-shop-app/packages/database';
 import {
+  AuthError,
   NotFoundError,
   ValidationError,
 } from '@e-shop-app/packages/error-handler';
@@ -293,11 +294,15 @@ export const handleBaseVerifyAccount = async (
   }
 
   if (userType === 'user') {
-    generateToken(res, {
-      userId: newAccount[0].id,
-      email: newAccount[0].email,
-      role: userType,
-    });
+    generateToken(
+      res,
+      {
+        userId: newAccount[0].id,
+        email: newAccount[0].email,
+        role: userType,
+      },
+      'user',
+    );
   }
 
   const { password: _, ...accountWithoutPassword } = newAccount[0];
@@ -308,15 +313,52 @@ export const handleBaseVerifyAccount = async (
 export const generateToken = (
   res: Response,
   payload: JwtPayload,
+  userType: TUserAccountType,
   noRefreshToken?: boolean,
 ) => {
   // Store the refresh and access token in an httpOnly secure cookie
+  // Have different access and refresh tokens names for user and seller accounts
 
   const accessToken = signJwtToken(payload, 'access');
-  setCookie(res, 'access_token', accessToken);
+
+  if (userType === 'seller') {
+    setCookie(res, 'seller_access_token', accessToken);
+  } else {
+    setCookie(res, 'access_token', accessToken);
+  }
 
   if (noRefreshToken) return;
 
   const refreshToken = signJwtToken(payload, 'refresh');
-  setCookie(res, 'refresh_token', refreshToken);
+
+  if (userType === 'seller') {
+    setCookie(res, 'seller_refresh_token', refreshToken);
+  } else {
+    setCookie(res, 'refresh_token', refreshToken);
+  }
+};
+
+export const baseGetCurrentAccount = async (
+  req: Request,
+  res: Response,
+  userType: TUserAccountType,
+) => {
+  const authUser = req.user;
+  if (!authUser) {
+    throw new AuthError('Unauthorized');
+  }
+
+  let currentUser;
+
+  if (userType === 'seller') {
+    currentUser = await getSellerBy('id', authUser.userId);
+  } else {
+    currentUser = await getUserBy('id', authUser.userId);
+  }
+
+  if (!currentUser) {
+    throw new NotFoundError(`${userType} not found`);
+  }
+
+  sendSuccess(res, currentUser, 'User retrieved successfully');
 };

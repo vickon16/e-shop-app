@@ -113,7 +113,7 @@ export const createShopSchema = z
 
     bio: z
       .string()
-      .max(500, 'Bio cannot exceed 500 characters')
+      .max(100, 'Bio cannot exceed 100 characters')
       .optional()
       .openapi({
         description: 'Short description of the shop',
@@ -167,3 +167,29 @@ export const createShopSchema = z
   });
 
 export type TCreateShopSchema = z.infer<typeof createShopSchema>;
+
+export const createStripeConnectLinkSchema = z
+  .object({
+    sellerId: z.uuid('Invalid seller ID').openapi({
+      description: 'Owner (seller) ID',
+      example: 'e9c1a4a5-6c77-4d89-9f41-2e1f9d5c0d88',
+    }),
+    refreshUrl: z.url('Invalid Url').openapi({
+      description:
+        'URL to redirect the user to if they need to restart the onboarding process',
+      example: 'http://localhost:3000/seller/refresh',
+    }),
+    returnUrl: z.url('Invalid Url').openapi({
+      description:
+        'URL to redirect the user to upon successful completion of the onboarding process',
+      example: 'http://localhost:3000/seller/success',
+    }),
+  })
+  .openapi({
+    title: 'CreateStripeConnectLinkSchema',
+    description: 'Schema for creating a Stripe Connect link',
+  });
+
+export type TCreateStripeConnectLinkSchema = z.infer<
+  typeof createStripeConnectLinkSchema
+>;

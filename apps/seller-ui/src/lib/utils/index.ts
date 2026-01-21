@@ -42,3 +42,14 @@ export const errorToast = (
     description: errorMessage,
   });
 };
+
+export function normalizeAndCapitalize(str?: string | null) {
+  if (!str || typeof str !== 'string') return '';
+
+  return str
+    .toLowerCase()
+    .replace(/[-_]/g, ' ') // Replace - and _ with spaces
+    .split(' ') // Split into words
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
+    .join(' ');
+}

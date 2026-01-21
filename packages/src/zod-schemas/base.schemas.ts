@@ -89,3 +89,12 @@ export const stringNumberSchema = z
   .refine((value) => /^\d+$/.test(value), {
     message: 'Must contain only digits (no decimal points or negative signs)',
   });
+
+export const optionalPriceSchema = z
+  .string()
+  .trim()
+  .optional()
+  .refine(
+    (val) => val === undefined || /^(0|[1-9]\d*)(\.\d+)?$/.test(val),
+    'Price must be a valid number and at least 0',
+  );

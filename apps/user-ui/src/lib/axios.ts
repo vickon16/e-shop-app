@@ -43,10 +43,12 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    const requestPath = '/auth/refresh-token?accountType=user';
+
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url.includes('/auth/refresh-token')
+      !originalRequest.url.includes(requestPath)
     ) {
       // prevent infinite loops
       if (isRefreshing) {
@@ -61,7 +63,7 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await axiosInstance.post('/auth/refresh-token');
+        await axiosInstance.post(requestPath);
         isRefreshing = false;
         onRefreshSuccess();
         return axiosInstance(originalRequest);

@@ -43,6 +43,12 @@ export class ValidationError extends AppError {
   }
 }
 
+export class ConflictError extends AppError {
+  constructor(message = 'Resource conflict') {
+    super({ message, statusCode: 409, errorCode: 'CONFLICT_ERROR' });
+  }
+}
+
 // Authentication error
 export class AuthError extends AppError {
   constructor(message = 'Unauthorized') {

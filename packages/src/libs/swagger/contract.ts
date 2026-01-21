@@ -1,5 +1,5 @@
-import { RouteContract } from '@e-shop-app/packages/types';
-import { registry } from './registry';
+import { RouteContract } from '../../types/index.js';
+import { registry } from './registry.js';
 
 export function registerContract(contract: RouteContract) {
   registry.registerPath({
@@ -8,7 +8,7 @@ export function registerContract(contract: RouteContract) {
     tags: contract.tags,
 
     // ---------------------------
-    // REQUEST
+    // REQUEST BODY
     // ---------------------------
     request: contract.request?.body && {
       body: {
@@ -22,11 +22,24 @@ export function registerContract(contract: RouteContract) {
     },
 
     // ---------------------------
-    // QUERY PARAMS
+    // PARAMETERS (PATH + QUERY)
     // ---------------------------
-    parameters: Array.isArray(contract.request?.query)
-      ? contract.request?.query
-      : [],
+    parameters: [
+      ...(Array.isArray(contract.request?.params)
+        ? contract.request.params.map((param) => ({
+            ...param,
+            in: 'path' as const,
+            required: true, // path params are ALWAYS required
+          }))
+        : []),
+
+      ...(Array.isArray(contract.request?.query)
+        ? contract.request.query.map((query) => ({
+            ...query,
+            in: 'query' as const,
+          }))
+        : []),
+    ],
 
     // ---------------------------
     // RESPONSES

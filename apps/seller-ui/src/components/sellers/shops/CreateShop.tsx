@@ -21,17 +21,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Routes } from '@/configs/routes';
+import { Textarea } from '@/components/ui/textarea';
 import { cn, errorToast } from '@/lib/utils';
-import { countryList } from '@e-shop-app/packages/constants';
+import { shopCategories } from '@e-shop-app/packages/constants';
 import { TSeller } from '@e-shop-app/packages/types';
 import {
   createShopSchema,
   TCreateShopSchema,
 } from '@e-shop-app/packages/zod-schemas';
-import Link from 'next/link';
-import { useState, useTransition } from 'react';
-import { FaEye, FaEyeSlash } from 'react-icons/fa6';
+import { useTransition } from 'react';
 
 type Props = {
   sellerId: string;
@@ -40,7 +38,6 @@ type Props = {
 
 const CreateShop = (props: Props) => {
   const { sellerId, onShopCreated } = props;
-  const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<TCreateShopSchema>({
@@ -50,9 +47,7 @@ const CreateShop = (props: Props) => {
       category: '',
       address: '',
       bio: '',
-      coverBanner: '',
       website: '',
-      socialLinks: {},
       openingHours: '',
       sellerId,
     },
@@ -81,32 +76,22 @@ const CreateShop = (props: Props) => {
   return (
     <>
       <h3 className="text-2xl font-semibold text-primary text-center mb-2">
-        Create an E-Shop Shop Account
+        Setup Your Shop
       </h3>
-
-      <p className="text-center text-gray-500 mb-4 text-sm">
-        Already have an account?{' '}
-        <Link
-          href={Routes.auth.login}
-          className="text-blue-500 hover:underline"
-        >
-          Login here
-        </Link>
-      </p>
 
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="w-full space-y-3"
+          className="w-full space-y-2"
         >
-          {/* Business Email */}
+          {/* Shop Name */}
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm font-medium">
-                  Full Name <span className="text-red-500">*</span>
+                  Shop Name <span className="text-red-500">*</span>
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -120,20 +105,19 @@ const CreateShop = (props: Props) => {
             )}
           />
 
-          {/* Business Email */}
+          {/* Shop Address */}
           <FormField
             control={form.control}
-            name="email"
+            name="address"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm font-medium">
-                  Email Address <span className="text-red-500">*</span>
+                  Address <span className="text-red-500">*</span>
                 </FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="E.g: user@example.com"
+                    placeholder="E.g: 123 Main St, City, Country"
                     className="w-full"
-                    type="email"
                     {...field}
                   />
                 </FormControl>
@@ -142,49 +126,27 @@ const CreateShop = (props: Props) => {
             )}
           />
 
-          {/* Business Phone number */}
+          {/* Shop category */}
           <FormField
             control={form.control}
-            name="phoneNumber"
+            name="category"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm font-medium">
-                  Phone Number <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="E.g: +1234567890"
-                    className="w-full"
-                    type="tel"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Country */}
-          <FormField
-            control={form.control}
-            name="country"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-medium">
-                  Country <span className="text-red-500">*</span>
+                  Shop Category <span className="text-red-500">*</span>
                 </FormLabel>
 
                 <Select {...field} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger className={cn('w-full')}>
-                      <SelectValue placeholder="Select" />
+                      <SelectValue placeholder="Select Category" />
                     </SelectTrigger>
                   </FormControl>
 
                   <SelectContent className="max-h-70">
-                    {countryList.map((item) => (
-                      <SelectItem key={item.code} value={item.code}>
-                        {item.name}
+                    {shopCategories.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -194,36 +156,61 @@ const CreateShop = (props: Props) => {
             )}
           />
 
-          {/* Password */}
+          {/* Business Email */}
           <FormField
             control={form.control}
-            name="password"
+            name="bio"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Bio</FormLabel>
+                <FormControl>
+                  <Textarea
+                    rows={3}
+                    placeholder="Write a short bio about your shop"
+                    className="w-full"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Shop Opening hours */}
+          <FormField
+            control={form.control}
+            name="openingHours"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm font-medium">
-                  Password <span className="text-red-500">*</span>
+                  Opening Hours
                 </FormLabel>
-                <div className="flex items-center gap-2 relative">
-                  <FormControl>
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter your password"
-                      className="w-full"
-                      {...field}
-                    />
-                  </FormControl>
-                  <button
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <FaEyeSlash className="size-4 text-slate-400" />
-                    ) : (
-                      <FaEye className="size-4 text-slate-400" />
-                    )}
-                  </button>
-                </div>
+                <FormControl>
+                  <Input
+                    placeholder="E.g: Mon-Fri 9am - 5pm"
+                    className="w-full"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Website */}
+          <FormField
+            control={form.control}
+            name="website"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Website</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="E.g: https://www.yourshop.com"
+                    className="w-full"
+                    {...field}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -235,7 +222,7 @@ const CreateShop = (props: Props) => {
             size="lg"
             className="w-full my-8!"
           >
-            Create an Account
+            Create a Shop
           </Button>
         </form>
       </Form>

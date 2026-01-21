@@ -32,10 +32,15 @@ export const env = {
 
   // Urls
   AUTH_SERVICE_URL: requireEnv('AUTH_SERVICE_URL', 'http://localhost:4001'),
+  PRODUCT_SERVICE_URL: requireEnv(
+    'PRODUCT_SERVICE_URL',
+    'http://localhost:4002',
+  ),
 
   // Ports
   GATEWAY_PORT: Number(requireEnv('GATEWAY_PORT', '4000')),
   AUTH_SERVICE_PORT: Number(requireEnv('AUTH_SERVICE_PORT', '4001')),
+  PRODUCT_SERVICE_PORT: Number(requireEnv('PRODUCT_SERVICE_PORT', '4002')),
   // Email
   SMTP_HOST: requireEnv('SMTP_HOST', ''),
   SMTP_PORT: Number(requireEnv('SMTP_PORT', '587')),
@@ -47,6 +52,7 @@ export const env = {
   REFRESH_TOKEN_SECRET: requireEnv('REFRESH_TOKEN_SECRET', ''),
   ACCESS_TOKEN_EXPIRATION: requireEnv('ACCESS_TOKEN_EXPIRATION', '15m'),
   REFRESH_TOKEN_EXPIRATION: requireEnv('REFRESH_TOKEN_EXPIRATION', '7d'),
+  STRIPE_SECRET_KEY: requireEnv('STRIPE_SECRET_KEY', ''),
 
   //  --------------------------------------------------
   // Frontend Environment Variables

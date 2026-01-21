@@ -7,8 +7,9 @@ export const getUserOptions = () => {
   return queryOptions({
     queryKey: [GET_USER],
     queryFn: async () => {
-      const response =
-        await axiosInstance.get<TBaseServerResponse<TUser>>('/auth/get-me');
+      const response = await axiosInstance.get<TBaseServerResponse<TUser>>(
+        '/auth/get-user-info',
+      );
 
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.message || 'Failed to fetch user data');

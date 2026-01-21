@@ -1,7 +1,7 @@
 import Providers from '@/components/providers';
 import './global.css';
 // import Header from '@/components/common/Header';
-import { Poppins, Roboto } from 'next/font/google';
+import { Poppins } from 'next/font/google';
 
 export const metadata = {
   title: 'Welcome to E-Shop Seller Portal',
@@ -15,12 +15,6 @@ const poppins = Poppins({
   variable: '--font-poppins',
 });
 
-const roboto = Roboto({
-  subsets: ['latin'],
-  weight: ['100', '300', '400', '500', '600', '700', '900'],
-  variable: '--font-roboto',
-});
-
 export default function RootLayout({
   children,
 }: {
@@ -29,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${poppins.variable} ${poppins.className} ${roboto.variable} antialiased`}
+        className={`${poppins.variable} ${poppins.className} min-h-screen bg-slate-900 text-slate-50 font-sans antialiased`}
       >
         <Providers>
           {/* <Header /> */}

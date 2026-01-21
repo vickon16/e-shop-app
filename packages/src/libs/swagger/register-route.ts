@@ -1,7 +1,7 @@
 import { Router, RequestHandler } from 'express';
-import { validate } from '@e-shop-app/packages/utils';
-import { RouteContract } from 'node_modules/@e-shop-app/packages/src/types/base.type';
-import { registerContract } from '../swagger/contract';
+import { validate } from '../../utils/base.utils.js';
+import { RouteContract } from '../../types/index.js';
+import { registerContract } from './contract.js';
 
 export function registerRoute(
   router: Router,

@@ -1,7 +1,7 @@
 import express from 'express';
 import {
   userForgotPasswordController,
-  loginUserController,
+  loginController,
   resetPasswordController,
   userRegistrationController,
   verifyUserController,
@@ -12,11 +12,15 @@ import {
   sellerRegistrationController,
   verifySellerController,
   createShopController,
+  createStripeConnectLinkController,
+  getSellerController,
 } from '../controllers/auth.controller';
-import { registerRoute } from '../utils/register-route';
+import { registerRoute } from '@e-shop-app/packages/libs/swagger';
 import {
   createShopContract,
+  createStripeConnectLinkContract,
   forgotPasswordContract,
+  getSellerContract,
   getUserContract,
   loginUserContract,
   refreshTokenContract,
@@ -48,7 +52,7 @@ registerRoute(authRouter, verifyUserContract, verifyUserController);
 registerRoute(authRouter, verifySellerContract, verifySellerController);
 
 // login user
-registerRoute(authRouter, loginUserContract, loginUserController);
+registerRoute(authRouter, loginUserContract, loginController);
 
 // forgot password
 registerRoute(authRouter, forgotPasswordContract, userForgotPasswordController);
@@ -68,7 +72,17 @@ registerRoute(authRouter, refreshTokenContract, refreshTokenController);
 // Get logged in user
 registerRoute(authRouter, getUserContract, getUserController);
 
+// Get logged in seller
+registerRoute(authRouter, getSellerContract, getSellerController);
+
 // create shop
 registerRoute(authRouter, createShopContract, createShopController);
+
+// create stripe connect link
+registerRoute(
+  authRouter,
+  createStripeConnectLinkContract,
+  createStripeConnectLinkController,
+);
 
 export default authRouter;

@@ -1,5 +1,14 @@
 import { RequestHandler } from 'express';
 import { TBaseApiResponse } from 'src/zod-schemas/base.schemas.js';
+import {
+  type ControllerRenderProps,
+  type FieldValues,
+  type Path,
+} from 'react-hook-form';
+import {
+  ParameterObject,
+  ReferenceObject,
+} from '@asteasolutions/zod-to-openapi/dist/types.js';
 
 export type TTableMeta = {
   page: number;
@@ -29,6 +38,8 @@ export interface ApiErrorResponse {
 
 export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
 
+export type TParams = ParameterObject | ReferenceObject;
+
 export interface RouteContract {
   method: 'post' | 'get' | 'put' | 'delete';
   path: string;
@@ -36,14 +47,8 @@ export interface RouteContract {
   tags: string[];
   request?: {
     body?: any;
-    query?: {
-      name: string;
-      in: 'query';
-      required?: boolean;
-      schema: {
-        type: 'number' | 'string' | 'boolean' | 'array' | 'object' | 'integer';
-      };
-    }[];
+    params?: TParams[];
+    query?: TParams[];
   };
   responses?: {
     [statusCode: number]: any;
@@ -51,10 +56,37 @@ export interface RouteContract {
   otherMiddlewares?: Array<RequestHandler>;
 }
 
-export type TUserAccountType = 'user' | 'seller';
+export type TUserAccountType = 'user' | 'seller' | 'combined';
 
 export interface JwtPayload {
   userId: string;
   email: string;
   role: TUserAccountType;
 }
+
+export type TBaseFieldProps = {
+  className?: string;
+  classNames?: {
+    content?: string;
+    item?: string;
+  };
+  placeHolder?: string;
+  emptyStateText?: string;
+  shouldNormalize?: boolean;
+  isLoading?: boolean;
+  isError?: boolean;
+};
+
+export type FieldProps<
+  T extends FieldValues,
+  E extends Path<T>,
+> = TBaseFieldProps & {
+  field: ControllerRenderProps<T, E>;
+};
+
+export type TSelect = {
+  label: string;
+  value: string;
+  description?: string;
+  disabled?: boolean;
+};

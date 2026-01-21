@@ -1,9 +1,15 @@
 'use client';
 
+import { useBaseMutation } from '@/actions/mutations/base.mutation';
+import StripeLogo from '@/assets/stripe-log.png';
 import CreateSellerAccountForm from '@/components/sellers/CreateSellerAccountForm';
 import CreateShop from '@/components/sellers/shops/CreateShop';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Routes } from '@/configs/routes';
+import { errorToast } from '@/lib/utils';
+import { TCreateStripeConnectLinkSchema } from '@e-shop-app/packages/zod-schemas';
+import Image from 'next/image';
+import { useState, useTransition } from 'react';
 
 const Steps = {
   CREATE_ACCOUNT: 1,
@@ -16,7 +22,36 @@ type TSteps = (typeof Steps)[keyof typeof Steps];
 const SignUpPage = () => {
   const [sellerId, setSellerId] = useState<string>();
   const [activeStep, setActiveStep] = useState<TSteps>(Steps.CREATE_ACCOUNT);
-  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  const createShopMutation = useBaseMutation<
+    TCreateStripeConnectLinkSchema,
+    { url: string }
+  >({
+    endpoint: '/auth/create-stripe-connect-link',
+  });
+
+  async function connectStripe() {
+    if (!sellerId) return;
+
+    startTransition(async () => {
+      try {
+        const response = await createShopMutation.mutateAsync({
+          sellerId,
+          refreshUrl: `${Routes.appUrl}${Routes.auth.signup}`,
+          returnUrl: Routes.sellerSuccessLink,
+        });
+
+        if (response.success && response.data.url) {
+          window.location.href = response.data.url;
+        }
+      } catch (error) {
+        errorToast(error, 'Failed to Sign up. Please try again');
+      }
+    });
+  }
+
+  const isLoadingCreateLink = isPending || createShopMutation.isPending;
 
   return (
     <div className="w-full flex flex-col items-center pt-10 min-h-screen">
@@ -62,9 +97,32 @@ const SignUpPage = () => {
           <CreateShop
             sellerId={sellerId}
             onShopCreated={(data) => {
-              console.log({ data });
+              setActiveStep(Steps.CONNECT_BANK);
             }}
           />
+        )}
+
+        {activeStep === Steps.CONNECT_BANK && sellerId && (
+          <div className="text-center">
+            <h3 className="text-2xl font-semibold">Withdraw Method</h3>
+
+            <br />
+
+            <Button
+              className="w-full"
+              onClick={connectStripe}
+              isLoading={isLoadingCreateLink}
+            >
+              Connect With Stripe
+              <Image
+                src={StripeLogo}
+                width={30}
+                height={30}
+                alt="Stripe Logo"
+                className="size-[30px] object-contain ml-2 inline"
+              />
+            </Button>
+          </div>
         )}
       </div>
     </div>

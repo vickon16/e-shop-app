@@ -8,8 +8,13 @@ export const getSellerBy = async (
 ) => {
   const currentUser = await appDb.query.sellersTable.findFirst({
     where: eq(type === 'email' ? sellersTable.email : sellersTable.id, value),
-    columns: {
-      password: Boolean(withPassword),
+    columns: withPassword
+      ? undefined // select ALL columns
+      : {
+          password: false, // exclude only password
+        },
+    with: {
+      shop: true,
     },
   });
 

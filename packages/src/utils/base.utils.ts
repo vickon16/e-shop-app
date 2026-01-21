@@ -37,7 +37,3 @@ export const validate =
     req.body = result.data; // typed & sanitized
     next();
   };
-
-export const calculate = () => {
-  return 2 * 2;
-};

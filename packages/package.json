@@ -57,6 +57,16 @@
       "types": "./dist/libs/redis/index.d.ts",
       "import": "./dist/libs/redis/index.js",
       "default": "./dist/libs/redis/index.js"
+    },
+    "./libs/stripe": {
+      "types": "./dist/libs/stripe/index.d.ts",
+      "import": "./dist/libs/stripe/index.js",
+      "default": "./dist/libs/stripe/index.js"
+    },
+    "./libs/swagger": {
+      "types": "./dist/libs/swagger/index.d.ts",
+      "import": "./dist/libs/swagger/index.js",
+      "default": "./dist/libs/swagger/index.js"
     }
   },
   "dependencies": {

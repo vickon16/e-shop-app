@@ -39,7 +39,7 @@ const LoginPage = () => {
   });
 
   const loginMutation = useBaseMutation<TLoginSchema, any>({
-    endpoint: '/auth/login',
+    endpoint: '/auth/login?accountType=seller',
   });
 
   async function onSubmit(data: TLoginSchema) {
@@ -47,7 +47,7 @@ const LoginPage = () => {
       try {
         await loginMutation.mutateAsync(data);
         toast.success('Login Successful');
-        router.push(Routes.home);
+        router.push(Routes.dashboard.base);
       } catch (error) {
         errorToast(error, 'Failed to Login. Please try again');
       }

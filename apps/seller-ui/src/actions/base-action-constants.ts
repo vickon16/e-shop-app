@@ -1,1 +1,4 @@
-export const GET_USER = 'GET_USER';
+export const GET_SELLER = 'GET_SELLER';
+export const GET_CATEGORIES = 'GET_CATEGORIES';
+
+export const GET_DISCOUNT_CODES = 'GET_DISCOUNT_CODES';

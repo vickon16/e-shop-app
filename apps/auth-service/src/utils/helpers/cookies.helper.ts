@@ -5,7 +5,11 @@ const isProd = env.NODE_ENV === 'production';
 
 export const setCookie = (
   res: Response,
-  type: 'access_token' | 'refresh_token',
+  type:
+    | 'access_token'
+    | 'refresh_token'
+    | 'seller_access_token'
+    | 'seller_refresh_token',
   cookieValue: string,
 ) => {
   const accessTokenMaxAge = 15 * 60 * 1000; // 15 mins

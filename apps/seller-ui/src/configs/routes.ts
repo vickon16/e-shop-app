@@ -9,6 +9,20 @@ class Routes {
     forgotPassword: `${this.authPrefix}/forgot-password`,
   };
 
+  static dashboard = {
+    base: '/dashboard',
+    orders: '/dashboard/orders',
+    payments: '/dashboard/payments',
+    createProduct: '/dashboard/create-product',
+    allProducts: '/dashboard/all-products',
+    createEvent: '/dashboard/create-event',
+    allEvents: '/dashboard/all-events',
+    inbox: '/dashboard/inbox',
+    settings: '/dashboard/settings',
+    notifications: '/dashboard/notifications',
+    discountCodes: '/dashboard/discount-codes',
+  };
+
   static profile = `/profile`;
   static wishlist = '/wishlist';
   static cart = '/cart';
@@ -16,6 +30,9 @@ class Routes {
   static shops = '/shops';
   static offers = '/offers';
   static becomeSeller = '/become-seller';
+  static logout = '/logout';
+
+  static sellerSuccessLink = `${this.appUrl}/seller/success`;
 }
 
 export type TRoutesKeys = keyof typeof Routes;

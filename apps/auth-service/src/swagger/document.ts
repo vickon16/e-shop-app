@@ -1,5 +1,5 @@
 import { OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
-import { registry } from './registry';
+import { registry } from '@e-shop-app/packages/libs/swagger';
 
 import '../routes/auth.router';
 

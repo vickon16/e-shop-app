@@ -1,18 +1,18 @@
-import express from 'express';
 import cors from 'cors';
+import express from 'express';
 
-import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
-import SwaggerUI from 'swagger-ui-express';
-import axios from 'axios';
-import cookieParser from 'cookie-parser';
 import { env } from '@e-shop-app/packages/env';
+import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
+import { initializeSiteConfig } from './utils/initializeSiteConfig';
 import { proxyHelper } from './utils/proxy.helper';
 
 const frontendUrl = env.NEXT_PUBLIC_APP_URL;
 const host = env.BASE_HOST;
 const gatewayPort = env.GATEWAY_PORT;
 const authServiceUrl = env.AUTH_SERVICE_URL;
+const productServiceUrl = env.PRODUCT_SERVICE_URL;
 
 const app = express();
 
@@ -59,9 +59,15 @@ app.get('/api/gateway-health', (_req, res) => {
 
 // Example: main backend service
 app.use('/api/auth', proxyHelper(authServiceUrl, 'auth'));
+app.use('/api/product', proxyHelper(productServiceUrl, 'product'));
 
-const server = app.listen(gatewayPort, () => {
+const server = app.listen(gatewayPort, async () => {
   console.log(`Listening at http://${host}:${gatewayPort}/api`);
+  try {
+    await initializeSiteConfig();
+  } catch (error) {
+    console.error('Error initializing site configuration:', error);
+  }
 });
 
 server.on('error', console.error);

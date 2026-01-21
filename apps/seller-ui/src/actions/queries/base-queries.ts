@@ -1,17 +1,21 @@
 import { queryOptions } from '@tanstack/react-query';
-import { GET_USER } from '../base-action-constants';
+import { GET_SELLER } from '../base-action-constants';
 import { axiosInstance } from '@/lib/axios';
-import { TUser, TBaseServerResponse } from '@e-shop-app/packages/types';
+import {
+  TBaseServerResponse,
+  TSellerWithRelations,
+} from '@e-shop-app/packages/types';
 
-export const getUserOptions = () => {
+export const getSellerOptions = () => {
   return queryOptions({
-    queryKey: [GET_USER],
+    queryKey: [GET_SELLER],
     queryFn: async () => {
-      const response =
-        await axiosInstance.get<TBaseServerResponse<TUser>>('/auth/get-me');
+      const response = await axiosInstance.get<
+        TBaseServerResponse<TSellerWithRelations>
+      >('/auth/get-seller-info');
 
       if (!response.data.success || !response.data.data) {
-        throw new Error(response.data.message || 'Failed to fetch user data');
+        throw new Error(response.data.message || 'Failed to fetch seller data');
       }
 
       return response.data.data;

@@ -1,9 +1,13 @@
-import { isAuthenticatedMiddleware } from '@e-shop-app/packages/middlewares';
+import {
+  isSellerAuthenticatedMiddleware,
+  isUserAuthenticatedMiddleware,
+} from '@e-shop-app/packages/middlewares';
 import { RouteContract } from '@e-shop-app/packages/types/base.type';
 import {
   baseApiResponse,
   createSellerSchema,
   createShopSchema,
+  createStripeConnectLinkSchema,
   createUserSchema,
   emailSchema,
   loginSchema,
@@ -73,6 +77,13 @@ export const loginUserContract = {
   routePath: '/login',
   request: {
     body: loginSchema,
+    query: [
+      {
+        name: 'accountType',
+        schema: { type: 'string' },
+        in: 'query',
+      },
+    ],
   },
 } as const satisfies RouteContract;
 
@@ -139,15 +150,32 @@ export const refreshTokenContract = {
   ...baseContract,
   method: 'post',
   path: '/api/auth/refresh-token',
+  request: {
+    query: [
+      {
+        name: 'accountType',
+        schema: { type: 'string' },
+        in: 'query',
+      },
+    ],
+  },
   routePath: '/refresh-token',
 } as const satisfies RouteContract;
 
 export const getUserContract = {
   ...baseContract,
   method: 'get',
-  path: '/api/auth/get-me',
-  routePath: '/get-me',
-  otherMiddlewares: [isAuthenticatedMiddleware],
+  path: '/api/auth/get-user-info',
+  routePath: '/get-user-info',
+  otherMiddlewares: [isUserAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const getSellerContract = {
+  ...baseContract,
+  method: 'get',
+  path: '/api/auth/get-seller-info',
+  routePath: '/get-seller-info',
+  otherMiddlewares: [isSellerAuthenticatedMiddleware],
 } as const satisfies RouteContract;
 
 export const createShopContract = {
@@ -157,6 +185,19 @@ export const createShopContract = {
   routePath: '/create-shop',
   request: {
     body: createShopSchema,
+  },
+  responses: {
+    201: baseApiResponse,
+  },
+} as const satisfies RouteContract;
+
+export const createStripeConnectLinkContract = {
+  ...baseContract,
+  method: 'post',
+  path: '/api/auth/create-stripe-connect-link',
+  routePath: '/create-stripe-connect-link',
+  request: {
+    body: createStripeConnectLinkSchema,
   },
   responses: {
     201: baseApiResponse,

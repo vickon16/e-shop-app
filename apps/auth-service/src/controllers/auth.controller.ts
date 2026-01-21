@@ -1,6 +1,7 @@
 import {
   appDb,
   eq,
+  sellersTable,
   shopsTable,
   usersTable,
 } from '@e-shop-app/packages/database';
@@ -10,7 +11,11 @@ import {
   NotFoundError,
   ValidationError,
 } from '@e-shop-app/packages/error-handler';
-import { JwtPayload, TUser } from '@e-shop-app/packages/types';
+import {
+  JwtPayload,
+  TUserAccountType,
+  TUserWithPassword,
+} from '@e-shop-app/packages/types';
 import {
   hashPassword,
   sendSuccess,
@@ -19,6 +24,7 @@ import {
 } from '@e-shop-app/packages/utils';
 import {
   TCreateShopSchema,
+  TCreateStripeConnectLinkSchema,
   TCreateUserSchema,
   TLoginSchema,
   TResetPasswordSchema,
@@ -26,6 +32,7 @@ import {
 } from '@e-shop-app/packages/zod-schemas';
 import { NextFunction, Request, Response } from 'express';
 import {
+  baseGetCurrentAccount,
   generateToken,
   handleBaseVerifyAccount,
   handleSendOtp,
@@ -33,6 +40,7 @@ import {
   verifyOtp,
 } from '../utils/helpers/auth.helpers';
 
+import { appStripe } from '@e-shop-app/packages/libs/stripe';
 import { getSellerBy } from '../utils/helpers/seller.helpers';
 import { getUserBy } from '../utils/helpers/user.helpers';
 
@@ -114,16 +122,30 @@ export const verifySellerController = async (
   }
 };
 
-export const loginUserController = async (
+export const loginController = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
+    const accountType: TUserAccountType =
+      req.query['accountType'] === 'seller' ? 'seller' : 'user';
+
     const body = req.body as TLoginSchema;
     const { email, password } = body;
 
-    const existingUser = await getUserBy('email', email, true);
+    let existingUser:
+      | Pick<
+          TUserWithPassword,
+          'id' | 'name' | 'email' | 'password' | 'emailVerified'
+        >
+      | undefined;
+
+    if (accountType === 'seller') {
+      existingUser = await getSellerBy('email', email, true);
+    } else {
+      existingUser = await getUserBy('email', email, true);
+    }
 
     if (!existingUser) {
       throw new NotFoundError('M: Invalid email or password.');
@@ -142,13 +164,21 @@ export const loginUserController = async (
       throw new NotFoundError('B: Invalid email or password.');
     }
 
+    if (accountType === 'seller') {
+      res.clearCookie('access_token');
+      res.clearCookie('refresh_token');
+    } else {
+      res.clearCookie('seller_access_token');
+      res.clearCookie('seller_refresh_token');
+    }
+
     const payload: JwtPayload = {
       userId: existingUser.id,
       email: existingUser.email,
-      role: 'user',
+      role: accountType,
     };
 
-    generateToken(res, payload);
+    generateToken(res, payload, accountType);
 
     sendSuccess(
       res,
@@ -160,7 +190,7 @@ export const loginUserController = async (
       'Login successful',
     );
   } catch (error) {
-    console.log('Error in loginUser:', error);
+    console.log('Error in loginController:', error);
     return next(error);
   }
 };
@@ -276,7 +306,13 @@ export const refreshTokenController = async (
   next: NextFunction,
 ) => {
   try {
-    const refreshToken = req.cookies['refresh_token'];
+    const accountType: TUserAccountType =
+      req.query['accountType'] === 'seller' ? 'seller' : 'user';
+
+    const refreshToken =
+      req.cookies[
+        accountType === 'seller' ? 'seller_refresh_token' : 'refresh_token'
+      ];
 
     if (!refreshToken) {
       throw new ForbiddenError('Refresh token is missing');
@@ -285,9 +321,11 @@ export const refreshTokenController = async (
     // Verify refresh token
     const decoded = verifyJwtToken(refreshToken, 'refresh');
 
-    let currentUser: TUser | undefined;
+    let currentUser;
 
-    if (decoded.role === 'user') {
+    if (decoded.role === 'seller') {
+      currentUser = await getSellerBy('id', decoded.userId);
+    } else {
       currentUser = await getUserBy('id', decoded.userId);
     }
 
@@ -303,12 +341,13 @@ export const refreshTokenController = async (
         email: decoded.email,
         role: decoded.role,
       },
+      accountType,
       true,
     );
 
     sendSuccess(res, null, 'Token refreshed successfully');
   } catch (error) {
-    console.log('Error in resendOtpController:', error);
+    console.log('Error in refreshTokenController:', error);
     return next(error);
   }
 };
@@ -320,20 +359,23 @@ export const getUserController = async (
   next: NextFunction,
 ) => {
   try {
-    const authUser = req.user;
-    if (!authUser) {
-      throw new AuthError('Unauthorized');
-    }
-
-    const currentUser = await getUserBy('id', authUser.userId);
-
-    if (!currentUser) {
-      throw new NotFoundError('User not found');
-    }
-
-    sendSuccess(res, currentUser, 'User retrieved successfully');
+    await baseGetCurrentAccount(req, res, 'user');
   } catch (error) {
-    console.log('Error in resendOtpController:', error);
+    console.log('Error in getUserController:', error);
+    return next(error);
+  }
+};
+
+// Get logged in user
+export const getSellerController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await baseGetCurrentAccount(req, res, 'seller');
+  } catch (error) {
+    console.log('Error in getSellerController:', error);
     return next(error);
   }
 };
@@ -346,20 +388,79 @@ export const createShopController = async (
   try {
     const body = req.body as TCreateShopSchema;
 
-    const newShop = await appDb
+    const createdShop = await appDb
       .insert(shopsTable)
       .values({
         ...body,
       })
       .returning();
 
-    if (newShop.length === 0) {
+    const newShop = createdShop?.[0];
+
+    if (!newShop) {
       throw new Error('Failed to create shop');
     }
 
-    sendSuccess(res, newShop[0], 'Shop created successfully');
+    // update seller with shopId
+    await appDb
+      .update(sellersTable)
+      .set({ shopId: newShop.id })
+      .where(eq(sellersTable.id, body.sellerId));
+
+    sendSuccess(res, newShop, 'Shop created successfully');
   } catch (error) {
     console.log('Error in createShopController:', error);
+    return next(error);
+  }
+};
+
+export const createStripeConnectLinkController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const body = req.body as TCreateStripeConnectLinkSchema;
+
+    const seller = await getSellerBy('id', body.sellerId);
+
+    if (!seller) {
+      throw new NotFoundError('Seller not found');
+    }
+
+    // create stripe express account if not exists
+    const account = await appStripe.accounts.create({
+      type: 'express',
+      country: 'US',
+      email: seller.email,
+      business_type: 'individual',
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+    });
+
+    await appDb
+      .update(sellersTable)
+      .set({
+        stripeId: account.id,
+      })
+      .where(eq(sellersTable.id, seller.id));
+
+    const accountLink = await appStripe.accountLinks.create({
+      account: account.id,
+      refresh_url: body.refreshUrl,
+      return_url: body.returnUrl,
+      type: 'account_onboarding',
+    });
+
+    sendSuccess(
+      res,
+      { url: accountLink.url },
+      'Stripe link created successfully',
+    );
+  } catch (error) {
+    console.log('Error in createStripeConnectLink:', error);
     return next(error);
   }
 };
