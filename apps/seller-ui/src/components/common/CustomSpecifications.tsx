@@ -35,7 +35,6 @@ export function CustomSpecifications(
                 name={`${name}.${index}.name`}
                 label="Specification Name"
                 placeHolder="e.g, Battery Life, Weight, Material"
-                className="text-background bg-foreground"
                 isRequired
                 disabled={disabled}
               />
@@ -44,7 +43,6 @@ export function CustomSpecifications(
                 name={`${name}.${index}.value`}
                 label="Specification Value"
                 placeHolder="e.g, 4000mAh, 1.5Kg, Plastic"
-                className="text-background bg-foreground"
                 isRequired
                 disabled={disabled}
               />

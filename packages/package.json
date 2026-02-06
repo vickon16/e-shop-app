@@ -67,6 +67,16 @@
       "types": "./dist/libs/swagger/index.d.ts",
       "import": "./dist/libs/swagger/index.js",
       "default": "./dist/libs/swagger/index.js"
+    },
+    "./libs/imagekit": {
+      "types": "./dist/libs/imagekit/index.d.ts",
+      "import": "./dist/libs/imagekit/index.js",
+      "default": "./dist/libs/imagekit/index.js"
+    },
+    "./libs/multer": {
+      "types": "./dist/libs/multer/index.d.ts",
+      "import": "./dist/libs/multer/index.js",
+      "default": "./dist/libs/multer/index.js"
     }
   },
   "dependencies": {

@@ -22,7 +22,7 @@ export function ColorSelector<T extends FieldValues, E extends Path<T>>(
 
   return (
     <FormControl>
-      <>
+      <div>
         <div className={cn('flex flex-wrap gap-2', className)}>
           {colors.map((color) => {
             const isSelected = fieldValue.includes(color);
@@ -85,7 +85,7 @@ export function ColorSelector<T extends FieldValues, E extends Path<T>>(
             </Button>
           </div>
         )}
-      </>
+      </div>
     </FormControl>
   );
 }

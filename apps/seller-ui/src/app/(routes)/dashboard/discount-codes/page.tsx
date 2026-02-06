@@ -27,12 +27,10 @@ import {
 } from '@e-shop-app/packages/zod-schemas';
 import { toast } from 'sonner';
 import { errorToast } from '@/lib/utils';
-import {
-  useCreateDiscountCodeMutation,
-  useDeleteDiscountCodeMutation,
-} from '@/actions/mutations/product.mutation';
+import { useDeleteDiscountCodeMutation } from '@/actions/mutations/product.mutation';
 import { discountTypes } from '@e-shop-app/packages/constants';
 import ConfirmActionModal from '@/components/common/ConfirmActionModal';
+import { useBaseMutation } from '@/actions/mutations/base.mutation';
 
 const tableHeadings = ['Title', 'Type', 'Value', 'Code', 'Actions'];
 
@@ -54,7 +52,14 @@ const DiscountCodesPage = () => {
   const [codeToDelete, setCodeToDelete] =
     useState<(typeof discountCodes)[number]>();
 
-  const createDiscountMutation = useCreateDiscountCodeMutation();
+  const createDiscountMutation = useBaseMutation<
+    TCreateDiscountCodesSchema,
+    any
+  >({
+    endpoint: '/product/create-discount-codes',
+    defaultMessage: 'Failed to create discount code',
+  });
+
   const deleteDiscountMutation = useDeleteDiscountCodeMutation();
 
   const onSubmit = async (data: TCreateDiscountCodesSchema) => {

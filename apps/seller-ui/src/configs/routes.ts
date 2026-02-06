@@ -1,5 +1,6 @@
 class Routes {
-  static appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  static userAppUrl = process.env.NEXT_PUBLIC_USER_APP_URL;
+  static sellerAppUrl = process.env.NEXT_PUBLIC_SELLER_APP_URL;
   static home = '/';
   static authPrefix = '/auth';
 
@@ -15,6 +16,11 @@ class Routes {
     payments: '/dashboard/payments',
     createProduct: '/dashboard/create-product',
     allProducts: '/dashboard/all-products',
+    product: {
+      base: (productId: string) => `/dashboard/product/${productId}`,
+      edit: (productId: string) => `/dashboard/product/edit/${productId}`,
+    },
+    userAppProductPage: `${this.userAppUrl}/product`,
     createEvent: '/dashboard/create-event',
     allEvents: '/dashboard/all-events',
     inbox: '/dashboard/inbox',
@@ -32,7 +38,7 @@ class Routes {
   static becomeSeller = '/become-seller';
   static logout = '/logout';
 
-  static sellerSuccessLink = `${this.appUrl}/seller/success`;
+  static sellerSuccessLink = `${this.sellerAppUrl}/seller/success`;
 }
 
 export type TRoutesKeys = keyof typeof Routes;

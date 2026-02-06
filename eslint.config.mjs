@@ -23,6 +23,7 @@ export default [
           ],
         },
       ],
+      '@typescript-eslint/ban-ts-comment': 'off',
     },
   },
   {

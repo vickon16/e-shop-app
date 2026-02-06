@@ -41,8 +41,7 @@ import {
 } from '../utils/helpers/auth.helpers';
 
 import { appStripe } from '@e-shop-app/packages/libs/stripe';
-import { getSellerBy } from '../utils/helpers/seller.helpers';
-import { getUserBy } from '../utils/helpers/user.helpers';
+import { getSellerBy, getUserBy } from '@e-shop-app/packages/utils';
 
 // Register a new user
 export const userRegistrationController = async (
@@ -144,8 +143,11 @@ export const loginController = async (
     if (accountType === 'seller') {
       existingUser = await getSellerBy('email', email, true);
     } else {
+      console.log('Getting user by email');
       existingUser = await getUserBy('email', email, true);
     }
+
+    console.log('Got here', existingUser);
 
     if (!existingUser) {
       throw new NotFoundError('M: Invalid email or password.');
@@ -163,6 +165,8 @@ export const loginController = async (
     if (!isValidPassword) {
       throw new NotFoundError('B: Invalid email or password.');
     }
+
+    console.log('Got here');
 
     if (accountType === 'seller') {
       res.clearCookie('access_token');

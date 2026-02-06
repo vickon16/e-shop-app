@@ -13,8 +13,10 @@ const baseAuthMiddleware = (
 
     if (userType === 'seller') {
       token = req.cookies['seller_access_token'];
-    } else {
+    } else if (userType === 'user') {
       token = req.cookies['access_token'];
+    } else {
+      token = req.cookies['seller_access_token'] || req.cookies['access_token'];
     }
 
     if (!token) {
@@ -27,6 +29,10 @@ const baseAuthMiddleware = (
 
     const decoded = verifyJwtToken(token, 'access');
 
+    if (!decoded) {
+      throw new AuthError(`Invalid decoded token`);
+    }
+
     if (userType !== 'combined' && decoded.role !== userType) {
       throw new AuthError(
         `Invalid token for the specified user type: ${userType}`,
@@ -37,7 +43,7 @@ const baseAuthMiddleware = (
     return next();
   } catch (error) {
     console.log(`Error in ${userType} isAuthenticated middleware:`, error);
-    return next(error);
+    throw error;
   }
 };
 

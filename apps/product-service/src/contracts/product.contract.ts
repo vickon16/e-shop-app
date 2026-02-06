@@ -1,9 +1,18 @@
-import { isSellerAuthenticatedMiddleware } from '@e-shop-app/packages/middlewares';
+import {
+  isCombinedAuthenticatedMiddleware,
+  isSellerAuthenticatedMiddleware,
+  isUserAuthenticatedMiddleware,
+} from '@e-shop-app/packages/middlewares';
 import { RouteContract } from '@e-shop-app/packages/types/base.type';
 import {
   baseApiResponse,
   createDiscountCodesSchema,
+  productSchema,
+  uploadProductImageResponseSchema,
 } from '@e-shop-app/packages/zod-schemas';
+import { multerUpload } from '@e-shop-app/packages/libs/multer';
+import { paginationDtoQueryArray } from '@e-shop-app/packages/utils';
+import { TProductQueryType } from '@e-shop-app/packages/types';
 
 const baseContract = {
   tags: ['Product'],
@@ -43,6 +52,97 @@ export const deleteDiscountCodeContract = {
   method: 'delete',
   path: '/api/product/delete-discount-code/:id',
   routePath: '/delete-discount-code/:id',
+  request: {
+    params: [
+      { name: 'id', in: 'path', schema: { type: 'string', format: 'uuid' } },
+    ],
+  },
+  otherMiddlewares: [isSellerAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const uploadProductImageContract = {
+  ...baseContract,
+  method: 'post',
+  path: '/api/product/upload-product-image',
+  routePath: '/upload-product-image',
+  otherMiddlewares: [
+    isSellerAuthenticatedMiddleware,
+    multerUpload.single('image'),
+  ],
+} as const satisfies RouteContract;
+
+export const deleteProductImageContract = {
+  ...baseContract,
+  method: 'delete',
+  path: '/api/product/delete-product-image/:fileId',
+  routePath: '/delete-product-image/:fileId',
+  request: {
+    params: [{ name: 'fileId', in: 'path', schema: { type: 'string' } }],
+  },
+  otherMiddlewares: [isSellerAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const createProductContract = {
+  ...baseContract,
+  method: 'post',
+  path: '/api/product/create-product',
+  routePath: '/create-product',
+  request: {
+    body: productSchema.extend({
+      images: uploadProductImageResponseSchema.array().nonempty(),
+    }),
+  },
+  otherMiddlewares: [isSellerAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const getShopProductContract = {
+  ...baseContract,
+  method: 'get',
+  path: '/api/product/get-shop-products',
+  routePath: '/get-shop-products',
+  otherMiddlewares: [isSellerAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const getAllProductsContract = {
+  ...baseContract,
+  method: 'get',
+  path: '/api/product/get-all-products',
+  routePath: '/get-all-products',
+  request: {
+    query: [
+      ...paginationDtoQueryArray,
+      {
+        name: 'type',
+        in: 'query',
+        schema: {
+          type: 'string',
+          enum: ['all', 'latest', 'top-sales'] satisfies TProductQueryType[],
+          default: 'latest',
+        },
+      },
+    ],
+  },
+  otherMiddlewares: [isUserAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const deleteProductContract = {
+  ...baseContract,
+  method: 'put',
+  path: '/api/product/delete-product/:id',
+  routePath: '/delete-product/:id',
+  request: {
+    params: [
+      { name: 'id', in: 'path', schema: { type: 'string', format: 'uuid' } },
+    ],
+  },
+  otherMiddlewares: [isSellerAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const restoreProductContract = {
+  ...baseContract,
+  method: 'put',
+  path: '/api/product/restore-product/:id',
+  routePath: '/restore-product/:id',
   request: {
     params: [
       { name: 'id', in: 'path', schema: { type: 'string', format: 'uuid' } },

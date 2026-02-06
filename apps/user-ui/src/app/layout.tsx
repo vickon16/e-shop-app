@@ -1,7 +1,7 @@
 import Providers from '@/components/providers';
 import './global.css';
 import Header from '@/components/common/Header';
-import { Poppins, Roboto } from 'next/font/google';
+import { Oregano, Poppins, Roboto } from 'next/font/google';
 
 export const metadata = {
   title: 'Welcome to E-Shop App',
@@ -21,6 +21,12 @@ const roboto = Roboto({
   variable: '--font-roboto',
 });
 
+const oregano = Oregano({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-oregano',
+});
+
 export default function RootLayout({
   children,
 }: {
@@ -29,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${poppins.variable} ${poppins.className} ${roboto.variable} antialiased`}
+        className={`${poppins.variable} ${poppins.className} ${roboto.variable} ${oregano.variable} antialiased`}
       >
         <Providers>
           <Header />

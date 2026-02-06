@@ -6,7 +6,7 @@ import { AxiosRequestConfig } from 'axios';
 
 export const useBaseMutation = <TData, TResponse>(props: {
   endpoint: string;
-  method?: 'post' | 'put' | 'patch';
+  method?: 'post' | 'put' | 'patch' | 'delete';
   defaultMessage?: string;
   config?: AxiosRequestConfig<any>;
 }) => {
@@ -23,6 +23,26 @@ export const useBaseMutation = <TData, TResponse>(props: {
 
       if (!response.data.success) {
         throw new Error(response.data.message || defaultMessage);
+      }
+
+      return response.data;
+    },
+  });
+};
+
+export const useDeleteProductImageMutation = () => {
+  return useMutation({
+    mutationFn: async (data: { fileId: string }) => {
+      const { fileId } = data;
+      const response = await axiosInstance.delete<TBaseServerResponse<any>>(
+        `/product/delete-product-image/${fileId}`,
+      );
+
+      if (!response.data.success) {
+        throw new Error(
+          response.data.message ||
+            'An error occurred while deleting the product image',
+        );
       }
 
       return response.data;

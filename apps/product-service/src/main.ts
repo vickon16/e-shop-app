@@ -1,4 +1,5 @@
 import express from 'express';
+import './jobs/product-cron-job';
 import cors from 'cors';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
@@ -10,13 +11,14 @@ import { openApiDocument } from './swagger/document';
 
 const app = express();
 
-const frontendUrl = env.NEXT_PUBLIC_APP_URL;
+const frontendUserUrl = env.NEXT_PUBLIC_USER_APP_URL;
+const frontendSellerUrl = env.NEXT_PUBLIC_SELLER_APP_URL;
 const host = env.BASE_HOST;
 const port = env.PRODUCT_SERVICE_PORT;
 
 app.use(
   cors({
-    origin: [frontendUrl],
+    origin: [frontendUserUrl, frontendSellerUrl],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   }),
@@ -24,8 +26,8 @@ app.use(
 
 app.use(cookieParser());
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 /* --------------------------------------------------
  * Trust Gateway Proxy

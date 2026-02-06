@@ -1,0 +1,10 @@
+{
+  "name": "seller-ui",
+  "targets": {
+    "dev": {
+      "options": {
+        "port": 3001
+      }
+    }
+  }
+}

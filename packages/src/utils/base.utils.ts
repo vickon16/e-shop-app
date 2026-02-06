@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from '../error-handler/base.js';
-import { ApiSuccessResponse } from '../types/base.type.js';
+import { ApiSuccessResponse, TParams } from '../types/base.type.js';
 import { z } from 'zod';
 
 export function sendSuccess<T>(
@@ -37,3 +37,83 @@ export const validate =
     req.body = result.data; // typed & sanitized
     next();
   };
+
+export enum Order {
+  ASC = 'ASC',
+  DESC = 'DESC',
+}
+
+export class PaginationDto {
+  readonly order: Order = Order.DESC;
+
+  readonly page: number = 1;
+
+  readonly limit: number = 10;
+
+  readonly isPaginated: boolean = true;
+}
+
+class PaginationMetadataDto {
+  readonly page: number;
+
+  readonly limit: number;
+
+  readonly itemCount: number;
+
+  readonly pageCount: number;
+
+  readonly hasPreviousPage: boolean;
+
+  readonly hasNextPage: boolean;
+
+  constructor({
+    pageOptionsDto,
+    itemCount,
+  }: {
+    pageOptionsDto: PaginationDto;
+    itemCount: number;
+  }) {
+    this.page = pageOptionsDto.page;
+    this.limit = pageOptionsDto.limit;
+    this.itemCount = itemCount;
+    this.pageCount = Math.ceil(this.itemCount / (this.limit ?? 10));
+    this.hasPreviousPage = this.page > 1;
+    this.hasNextPage = this.page < this.pageCount;
+  }
+}
+
+export class PaginationResultDto<T> {
+  readonly data: T[];
+
+  readonly meta: PaginationMetadataDto;
+
+  constructor(data: T[], itemCount: number, options = { page: 1, limit: 10 }) {
+    this.data = data;
+    this.meta = new PaginationMetadataDto({
+      itemCount,
+      pageOptionsDto: options as PaginationDto,
+    });
+  }
+}
+
+export const paginationDtoQueryArray: TParams[] = [
+  {
+    name: 'page',
+    schema: { type: 'number' },
+    in: 'query',
+  },
+  {
+    name: 'limit',
+    schema: { type: 'number' },
+    in: 'query',
+  },
+  {
+    name: 'order',
+    in: 'query',
+    schema: {
+      type: 'string',
+      enum: [Order.ASC, Order.DESC],
+      default: Order.DESC,
+    },
+  },
+];

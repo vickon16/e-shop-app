@@ -3,11 +3,11 @@
 import { getUserOptions } from '@/actions/queries/base-queries';
 import { Routes } from '@/configs/routes';
 import { cn } from '@/lib/utils';
+import { useAppStore } from '@/store';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { FaCartPlus, FaRegUser } from 'react-icons/fa';
 import { GoHeart } from 'react-icons/go';
-import { CgProfile } from 'react-icons/cg';
 
 export const BaseHeader = () => {
   const userQuery = useQuery(getUserOptions());
@@ -15,6 +15,9 @@ export const BaseHeader = () => {
   const isLoadingUser = userQuery.isLoading;
   const isLoggedIn = !!user && !isLoadingUser;
   const route = isLoggedIn ? Routes.profile : Routes.auth.login;
+
+  const store = useAppStore((state) => state);
+  const { wishlist, cart } = store;
 
   return (
     <div className="flex items-center gap-8">
@@ -37,11 +40,11 @@ export const BaseHeader = () => {
       <div className="flex items-center gap-5">
         <Link href={Routes.wishlist} className="relative">
           <GoHeart className="text-3xl" />
-          <AbsoluteDisplay value={2} className="bg-red-500" />
+          <AbsoluteDisplay value={wishlist.length} className="bg-red-500" />
         </Link>
         <Link href={Routes.cart} className="relative">
           <FaCartPlus className="text-3xl" />
-          <AbsoluteDisplay value={5} className="bg-emerald-500" />
+          <AbsoluteDisplay value={cart.length} className="bg-emerald-500" />
         </Link>
       </div>
     </div>

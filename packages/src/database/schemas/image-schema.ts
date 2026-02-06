@@ -1,29 +1,51 @@
-import { pgTable, uuid, text, timestamp } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  AnyPgColumn,
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { shopsTable, usersTable } from './index.js';
+import { productsTable, sellersTable, shopsTable } from './index.js';
 
 export const imagesTable = pgTable('images', {
   id: uuid('id').defaultRandom().primaryKey(),
   fileId: text('file_id').notNull(),
-  url: text('url').notNull(),
+  fileUrl: text('file_url').notNull(),
 
-  userId: uuid('user_id')
+  productId: uuid('product_id')
     .notNull()
-    .references(() => usersTable.id, { onDelete: 'cascade' }),
+    .references(() => productsTable.id, {
+      onDelete: 'cascade',
+    }),
+  sellerId: uuid('seller_id')
+    .notNull()
+    .references(() => sellersTable.id, {
+      onDelete: 'cascade',
+    }),
 
-  shopId: uuid('shop_id'),
+  shopId: uuid('shop_id').references((): AnyPgColumn => shopsTable.id, {
+    onDelete: 'cascade',
+  }),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 export const imagesRelations = relations(imagesTable, ({ one }) => ({
-  user: one(usersTable, {
-    fields: [imagesTable.userId],
-    references: [usersTable.id],
+  product: one(productsTable, {
+    fields: [imagesTable.productId],
+    references: [productsTable.id],
+    relationName: 'product',
+  }),
+  seller: one(sellersTable, {
+    fields: [imagesTable.sellerId],
+    references: [sellersTable.id],
+    relationName: 'seller',
   }),
   shop: one(shopsTable, {
     fields: [imagesTable.shopId],
     references: [shopsTable.id],
+    relationName: 'shop',
   }),
 }));

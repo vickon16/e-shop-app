@@ -78,7 +78,7 @@ export const RichTextEditor = (props: {
         ]}
         placeholder={placeholder || 'Compose an epic...'}
         className={cn(
-          'min-h-[200px] bg-transparent border border-gray-700 text-white rounded-md ',
+          'min-h-[150px] bg-transparent border border-gray-700 text-white rounded-md ',
           classNames?.content,
         )}
       />
@@ -98,7 +98,7 @@ export const RichTextEditor = (props: {
             color: white!important;
           }
           .ql-editor {
-            min-height: 200px;
+            min-height: 150px;
           }
           .ql-snow {
             border-color: #444!important;

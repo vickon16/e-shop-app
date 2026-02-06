@@ -54,8 +54,14 @@ export const env = {
   REFRESH_TOKEN_EXPIRATION: requireEnv('REFRESH_TOKEN_EXPIRATION', '7d'),
   STRIPE_SECRET_KEY: requireEnv('STRIPE_SECRET_KEY', ''),
 
+  // Imagekit
+  IMAGEKIT_PUBLIC_KEY: requireEnv('IMAGEKIT_PUBLIC_KEY', ''),
+  IMAGEKIT_PRIVATE_KEY: requireEnv('IMAGEKIT_PRIVATE_KEY', ''),
+  IMAGEKIT_URL_ENDPOINT: requireEnv('IMAGEKIT_URL_ENDPOINT', ''),
+
   //  --------------------------------------------------
   // Frontend Environment Variables
   // -------------------------------------------------- */
-  NEXT_PUBLIC_APP_URL: requireEnv('NEXT_PUBLIC_APP_URL', ''),
+  NEXT_PUBLIC_USER_APP_URL: requireEnv('NEXT_PUBLIC_USER_APP_URL', ''),
+  NEXT_PUBLIC_SELLER_APP_URL: requireEnv('NEXT_PUBLIC_SELLER_APP_URL', ''),
 } as const;

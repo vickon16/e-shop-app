@@ -31,6 +31,7 @@ import { ColorSelector } from '@/components/common/ColorSelector';
 import { RichTextEditor } from './RichTextEditor';
 import FieldMultiSelect from './FieldMultiselect';
 import { SizeSelector } from './SizeSelector';
+import { DiscountCodesSelector } from './DiscountCodeSelector';
 
 export type CommonProps = {
   label: string;
@@ -56,7 +57,8 @@ type DefaultInputProps = CommonProps & {
     | 'text-area'
     | 'color-selector'
     | 'rich-text-editor'
-    | 'size-selector';
+    | 'size-selector'
+    | 'discount-code-selector';
 };
 
 type SelectInputProps = CommonProps & {
@@ -112,6 +114,7 @@ export const BaseFormItem = ({
       {label} {isRequired && <span className="text-red-500">*</span>}
     </FormLabel>
     {children}
+    <FormMessage className="text-xs" />
   </FormItem>
 );
 
@@ -126,148 +129,129 @@ export const BaseFormControls = <T extends FieldValues, E extends Path<T>>(
   return (
     <BaseFormItem label={label} isRequired={isRequired} classNames={classNames}>
       {!props.type && (
-        <>
-          <FormControl>
-            <Input
-              {...field}
-              type={'text'}
-              className={props.className}
-              placeholder={props.placeHolder}
-            />
-          </FormControl>
-          <FormMessage className="text-xs" />
-        </>
+        <FormControl>
+          <Input
+            {...field}
+            type={'text'}
+            className={props.className}
+            placeholder={props.placeHolder}
+          />
+        </FormControl>
       )}
 
       {(props.type === 'email' ||
         props.type === 'number' ||
         props.type === 'phone') && (
-        <>
-          <FormControl>
-            <Input
-              {...field}
-              type={props.type}
-              className={props.className}
-              placeholder={props.placeHolder}
-            />
-          </FormControl>
-          <FormMessage className="text-xs" />
-        </>
+        <FormControl>
+          <Input
+            {...field}
+            type={props.type}
+            className={props.className}
+            placeholder={props.placeHolder}
+          />
+        </FormControl>
       )}
 
       {props.type === 'text-area' && (
-        <>
-          <FormControl>
-            <Textarea
-              {...field}
-              className={props.className}
-              placeholder={props.placeHolder}
-            />
-          </FormControl>
-          <FormMessage className="text-xs" />
-        </>
+        <FormControl>
+          <Textarea
+            {...field}
+            className={props.className}
+            placeholder={props.placeHolder}
+          />
+        </FormControl>
       )}
 
       {props.type === 'date' && (
-        <>
-          <Popover modal={false}>
-            <PopoverTrigger asChild>
-              <FormControl>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    'flex w-full text-left h-10 font-normal border-input',
-                    !field.value && 'text-muted-foreground',
-                    props.className,
-                  )}
-                >
-                  {field.value ? (
-                    format(field.value, 'PPP')
-                  ) : (
-                    <span>Pick a date</span>
-                  )}
-                  <FaCalendar className="ml-auto h-4 w-4 opacity-50" />
-                </Button>
-              </FormControl>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={field.value ?? new Date()}
-                onSelect={field.onChange}
-                disabled={{
-                  after: new Date(),
-                  before: new Date(1900, 0),
-                }}
-              />
-            </PopoverContent>
-          </Popover>
-          <FormMessage className="text-xs" />
-        </>
+        <Popover modal={false}>
+          <PopoverTrigger asChild>
+            <FormControl>
+              <Button
+                variant="outline"
+                className={cn(
+                  'flex w-full text-left h-10 font-normal border-input',
+                  !field.value && 'text-muted-foreground',
+                  props.className,
+                )}
+              >
+                {field.value ? (
+                  format(field.value, 'PPP')
+                ) : (
+                  <span>Pick a date</span>
+                )}
+                <FaCalendar className="ml-auto h-4 w-4 opacity-50" />
+              </Button>
+            </FormControl>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={field.value ?? new Date()}
+              onSelect={field.onChange}
+              disabled={{
+                after: new Date(),
+                before: new Date(1900, 0),
+              }}
+            />
+          </PopoverContent>
+        </Popover>
       )}
 
       {props.type === 'select' && (
-        <>
-          <FieldSelect
-            field={field}
-            className={props.className}
-            placeHolder={props.placeHolder}
-            classNames={props.classNames}
-            options={props.options}
-            shouldNormalize={props.shouldNormalize}
-          />
-          <FormMessage />
-        </>
+        <FieldSelect
+          field={field}
+          className={props.className}
+          placeHolder={props.placeHolder}
+          classNames={props.classNames}
+          options={props.options}
+          shouldNormalize={props.shouldNormalize}
+        />
       )}
 
       {props.type === 'color-selector' && (
-        <>
-          <ColorSelector
-            field={field}
-            className={props.className}
-            placeHolder={props.placeHolder}
-            classNames={{ item: props.classNames?.item }}
-          />
-          <FormMessage />
-        </>
+        <ColorSelector
+          field={field}
+          className={props.className}
+          placeHolder={props.placeHolder}
+          classNames={{ item: props.classNames?.item }}
+        />
       )}
 
       {props.type === 'size-selector' && (
-        <>
-          <SizeSelector
-            field={field}
-            className={props.className}
-            classNames={{ item: props.classNames?.item }}
-          />
-          <FormMessage />
-        </>
+        <SizeSelector
+          field={field}
+          className={props.className}
+          classNames={{ item: props.classNames?.item }}
+        />
+      )}
+
+      {props.type === 'discount-code-selector' && (
+        <DiscountCodesSelector
+          field={field}
+          className={props.className}
+          classNames={{ item: props.classNames?.item }}
+        />
       )}
 
       {props.type === 'rich-text-editor' && (
-        <>
-          <RichTextEditor
-            value={field.value}
-            onChange={field.onChange}
-            placeholder={props.placeHolder}
-            className={props.className}
-            classNames={{ content: props.classNames?.content }}
-          />
-          <FormMessage />
-        </>
+        <RichTextEditor
+          value={field.value}
+          onChange={field.onChange}
+          placeholder={props.placeHolder}
+          className={props.className}
+          classNames={{ content: props.classNames?.content }}
+        />
       )}
 
       {props.type === 'multi-select' && (
-        <>
-          <FieldMultiSelect
-            field={field}
-            className={props.className}
-            placeHolder={props.placeHolder}
-            options={props.options}
-            shouldNormalize={props.shouldNormalize}
-            classNames={props.classNames}
-          />
-          <FormMessage />
-        </>
+        <FieldMultiSelect
+          field={field}
+          className={props.className}
+          placeHolder={props.placeHolder}
+          options={props.options}
+          shouldNormalize={props.shouldNormalize}
+          classNames={props.classNames}
+        />
       )}
     </BaseFormItem>
   );

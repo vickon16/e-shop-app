@@ -1,5 +1,6 @@
 class Routes {
-  static appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  static userAppUrl = process.env.NEXT_PUBLIC_USER_APP_URL;
+  static sellerAppUrl = process.env.NEXT_PUBLIC_SELLER_APP_URL;
   static home = '/';
   static authPrefix = '/auth';
 
@@ -12,10 +13,11 @@ class Routes {
   static profile = `/profile`;
   static wishlist = '/wishlist';
   static cart = '/cart';
-  static products = '/products';
-  static shops = '/shops';
+  static product = '/product';
+  static shop = '/shop';
   static offers = '/offers';
   static becomeSeller = '/become-seller';
+  static inbox = '/inbox';
 }
 
 export type TRoutesKeys = keyof typeof Routes;

@@ -1,3 +1,4 @@
+import { Order } from '../utils/base.utils.js';
 import { z } from './base-zod.js';
 
 export const emailSchema = z.object({
@@ -90,11 +91,29 @@ export const stringNumberSchema = z
     message: 'Must contain only digits (no decimal points or negative signs)',
   });
 
-export const optionalPriceSchema = z
+export const priceSchema = z
   .string()
   .trim()
-  .optional()
   .refine(
     (val) => val === undefined || /^(0|[1-9]\d*)(\.\d+)?$/.test(val),
     'Price must be a valid number and at least 0',
   );
+
+const orderArray = [Order.ASC, Order.DESC] as const satisfies Order[];
+
+export const paginatedDtoSchema = z.object({
+  page: z.number().int().openapi({
+    description: 'Page number for pagination',
+    example: 1,
+  }),
+  limit: z.number().int().openapi({
+    description: 'Number of items per page',
+    example: 20,
+  }),
+  order: z.enum(orderArray).optional().openapi({
+    description: 'Order of the results',
+    example: Order.ASC,
+  }),
+});
+
+export type TPaginatedDTOSchema = z.infer<typeof paginatedDtoSchema>;

@@ -9,6 +9,7 @@ import {
   ParameterObject,
   ReferenceObject,
 } from '@asteasolutions/zod-to-openapi/dist/types.js';
+import type { Row } from '@tanstack/react-table';
 
 export type TTableMeta = {
   page: number;
@@ -19,10 +20,13 @@ export type TTableMeta = {
   hasNextPage: boolean;
 };
 
-export type TBaseServerResponse<T> = TBaseApiResponse & {
+export type TPaginatedServerResponse<T> = {
   data: T;
-  meta?: TTableMeta;
+  meta: TTableMeta;
 };
+
+export type TBaseServerResponse<T> = TBaseApiResponse &
+  TPaginatedServerResponse<T>;
 
 // api-response.ts
 export interface ApiSuccessResponse<T = unknown> extends TBaseApiResponse {
@@ -90,3 +94,8 @@ export type TSelect = {
   description?: string;
   disabled?: boolean;
 };
+
+export interface TDataTableRowAction<TData> {
+  row: Row<TData>;
+  variant: 'update' | 'cancel';
+}

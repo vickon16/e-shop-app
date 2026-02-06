@@ -30,8 +30,7 @@ import {
 } from '@e-shop-app/packages/utils';
 import { Request, Response } from 'express';
 import { setCookie } from './cookies.helper';
-import { getSellerBy } from './seller.helpers';
-import { getUserBy } from './user.helpers';
+import { getSellerBy, getUserBy } from '@e-shop-app/packages/utils';
 
 export const startOtpCheckAndSend = async (
   name: string,

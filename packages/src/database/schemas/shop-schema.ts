@@ -7,7 +7,7 @@ import {
   real,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { imagesTable, sellersTable, usersTable } from './index.js';
+import { avatarTable, sellersTable, usersTable } from './index.js';
 
 export const shopsTable = pgTable('shops', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -15,8 +15,8 @@ export const shopsTable = pgTable('shops', {
   category: text('category').notNull(),
   bio: text('bio'),
 
-  avatarId: uuid('avatar_id').references(() => imagesTable.id, {
-    onDelete: 'set null',
+  avatarId: uuid('avatar_id').references(() => avatarTable.id, {
+    onDelete: 'cascade',
   }),
   address: text('address').notNull(),
   coverBanner: text('cover_banner'),
@@ -26,17 +26,23 @@ export const shopsTable = pgTable('shops', {
     .$type<{ [key: string]: string }>()
     .default({}),
   ratings: real('ratings').notNull().default(0),
-  sellerId: uuid('seller_id').unique().notNull(),
+
+  sellerId: uuid('seller_id')
+    .unique()
+    .references(() => sellersTable.id, {
+      onDelete: 'cascade',
+    })
+    .notNull(),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 export const shopsRelations = relations(shopsTable, ({ one, many }) => ({
-  avatar: one(imagesTable, {
+  avatar: one(avatarTable, {
     relationName: 'shopAvatar',
     fields: [shopsTable.avatarId],
-    references: [imagesTable.id],
+    references: [avatarTable.id],
   }),
 
   sellers: one(sellersTable, {
