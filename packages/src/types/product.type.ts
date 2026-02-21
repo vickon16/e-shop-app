@@ -4,3 +4,5 @@ export type TProductQueryType =
   | 'top-sales'
   | 'on-sale'
   | 'new-arrivals';
+
+export type TFilteredProductType = 'default' | 'event';

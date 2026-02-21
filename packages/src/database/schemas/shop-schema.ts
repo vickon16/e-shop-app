@@ -7,7 +7,7 @@ import {
   real,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { avatarTable, sellersTable, usersTable } from './index.js';
+import { avatarTable, sellersTable, usersTable, ordersTable } from './index.js';
 
 export const shopsTable = pgTable('shops', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -19,6 +19,7 @@ export const shopsTable = pgTable('shops', {
     onDelete: 'cascade',
   }),
   address: text('address').notNull(),
+  country: text('country'),
   coverBanner: text('cover_banner'),
   openingHours: text('opening_hours'),
   website: text('website'),
@@ -45,11 +46,12 @@ export const shopsRelations = relations(shopsTable, ({ one, many }) => ({
     references: [avatarTable.id],
   }),
 
-  sellers: one(sellersTable, {
+  seller: one(sellersTable, {
     fields: [shopsTable.sellerId],
     references: [sellersTable.id],
   }),
   reviews: many(shopReviewsTable),
+  orders: many(ordersTable),
 }));
 
 export const shopReviewsTable = pgTable('shop_reviews', {

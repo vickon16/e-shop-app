@@ -63,7 +63,6 @@ const DiscountCodesPage = () => {
   const deleteDiscountMutation = useDeleteDiscountCodeMutation();
 
   const onSubmit = async (data: TCreateDiscountCodesSchema) => {
-    console.log('Form Data:', data);
     // Implement create discount code functionality here
 
     if (discountCodeQuery.isLoading) return;
@@ -94,7 +93,7 @@ const DiscountCodesPage = () => {
       discountCodeQuery.refetch();
     } catch (error) {
       console.log(error);
-      errorToast(error, 'Failed to create discount code.');
+      errorToast(error, 'Failed to delete discount code.');
     }
   };
 

@@ -2,15 +2,17 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 
 type Props = {
-  rating: number; // rating value (e.g., 3.5)
+  rating: number | string; // rating value (e.g., 3.5)
   max?: number; // max stars, default 5
   size?: number; // star size in px, default 20
   className?: string;
 };
 
 export const Ratings = ({ rating, max = 5, size = 20, className }: Props) => {
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating - fullStars >= 0.5;
+  const numericRating =
+    typeof rating === 'string' ? parseFloat(rating) : rating;
+  const fullStars = Math.floor(numericRating);
+  const hasHalfStar = numericRating - fullStars >= 0.5;
   const emptyStars = max - fullStars - (hasHalfStar ? 1 : 0);
 
   return (

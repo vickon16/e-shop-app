@@ -17,24 +17,38 @@ import { NextFunction, Request, Response } from 'express';
 import {
   and,
   appDb,
+  arrayOverlaps,
+  asc,
+  avatarTable,
+  count,
+  desc,
   discountCodesTable,
   eq,
+  gte,
+  ilike,
   imagesTable,
-  productsTable,
-  count,
-  or,
+  inArray,
+  isNotNull,
   isNull,
-  desc,
-  asc,
+  lte,
+  or,
+  ordersTable,
+  productsTable,
+  shopsTable,
+  sql,
 } from '@e-shop-app/packages/database';
 import { imagekit } from '@e-shop-app/packages/libs/imagekit';
 import {
+  TFilteredProductType,
+  TProductQueryType,
+} from '@e-shop-app/packages/types';
+import {
   paginatedDtoSchema,
   TCreateDiscountCodesSchema,
+  TPaginatedDTOSchema,
   TProductSchema,
   TUploadProductImageResponseSchema,
 } from '@e-shop-app/packages/zod-schemas';
-import { TProductQueryType } from '@e-shop-app/packages/types';
 
 // Create product
 export const createProductController = async (
@@ -66,6 +80,10 @@ export const createProductController = async (
 
     if (!seller) {
       throw new NotFoundError('Seller not found');
+    }
+
+    if (!seller.shopId) {
+      throw new BadRequestError('Seller has not created a shop yet');
     }
 
     // comma separated tags to lowercase tags array
@@ -133,6 +151,10 @@ export const getShopProductController = async (
       throw new NotFoundError('Seller not found');
     }
 
+    if (!seller.shopId) {
+      throw new BadRequestError('Seller does not have a shop yet');
+    }
+
     const products = await appDb.query.productsTable.findMany({
       where: eq(productsTable.shopId, seller.shopId),
       with: {
@@ -148,6 +170,26 @@ export const getShopProductController = async (
   }
 };
 
+const paginationDtoWrapper = async (
+  req: Request,
+  callback: (paginatedData: TPaginatedDTOSchema) => Promise<void>,
+) => {
+  const paginationDto = paginatedDtoSchema.safeParse({
+    page: parseInt(req.query.page as string) || 1,
+    limit: parseInt(req.query.limit as string) || 20,
+    order: (req.query.order as Order) || Order.DESC,
+  });
+
+  if (!paginationDto.success) {
+    throw new ValidationError(
+      'Invalid query parameters',
+      paginationDto.error.message,
+    );
+  }
+
+  return await callback(paginationDto.data);
+};
+
 // Get all products
 export const getAllProductsController = async (
   req: Request,
@@ -160,78 +202,382 @@ export const getAllProductsController = async (
       throw new AuthError('Unauthorized');
     }
 
-    const paginationDto = paginatedDtoSchema.safeParse({
-      page: parseInt(req.query.page as string) || 1,
-      limit: parseInt(req.query.limit as string) || 20,
-      order: (req.query.order as Order) || Order.DESC,
-    });
+    await paginationDtoWrapper(req, async (paginationDto) => {
+      const { page, limit, order } = paginationDto;
+      const type = (req.query.type || 'latest') as TProductQueryType;
+      const skip = (page - 1) * limit;
 
-    if (!paginationDto.success) {
-      throw new ValidationError(
-        'Invalid query parameters',
-        paginationDto.error.message,
+      const baseWhere = or(
+        isNull(productsTable.startingDate),
+        isNull(productsTable.endingDate),
       );
-    }
 
-    const { page, limit, order } = paginationDto.data;
-    const type = (req.query.type || 'latest') as TProductQueryType;
-    const skip = (page - 1) * limit;
+      const orderFunc = order === Order.ASC ? asc : desc;
 
-    const baseWhere = or(
-      isNull(productsTable.startingDate),
-      isNull(productsTable.endingDate),
-    );
+      const orderBy =
+        type === 'top-sales'
+          ? orderFunc(productsTable.totalSales)
+          : orderFunc(productsTable.createdAt);
 
-    const orderFunc = order === Order.ASC ? asc : desc;
+      const baseWith = {
+        images: true,
+        shop: { with: { avatar: true } },
+      } as const;
 
-    const orderBy =
-      type === 'top-sales'
-        ? orderFunc(productsTable.totalSales)
-        : orderFunc(productsTable.createdAt);
+      const [productsResults, countResult, top10Results] = await Promise.all([
+        // fetch all products
+        appDb.query.productsTable.findMany({
+          where: baseWhere,
+          orderBy,
+          limit,
+          offset: skip,
+          with: baseWith,
+        }),
 
-    const baseWith = {
-      images: true,
-      shop: { with: { avatar: true } },
-    } as const;
+        // count products
+        appDb.select({ total: count() }).from(productsTable).where(baseWhere),
 
-    const [productsResults, countResult, top10Results] = await Promise.all([
-      // fetch all products
-      appDb.query.productsTable.findMany({
-        where: baseWhere,
-        orderBy,
-        limit,
-        offset: skip,
-        with: baseWith,
-      }),
+        // top 10 products
+        appDb.query.productsTable.findMany({
+          where: baseWhere,
+          orderBy,
+          limit: 10,
+        }),
+      ]);
 
-      // count products
-      appDb.select({ total: count() }).from(productsTable).where(baseWhere),
+      const itemCount = countResult?.[0]?.total || 0;
 
-      // top 10 products
-      appDb.query.productsTable.findMany({
-        where: baseWhere,
-        orderBy,
-        limit: 10,
-      }),
-    ]);
+      const paginatedResult = new PaginationResultDto(
+        productsResults,
+        itemCount,
+        paginationDto,
+      );
 
-    const itemCount = countResult?.[0]?.total || 0;
-
-    const paginatedResult = new PaginationResultDto(
-      productsResults,
-      itemCount,
-      paginationDto.data,
-    );
-
-    sendSuccess(
-      res,
-      { paginatedResult, top10By: type, top10Results },
-      'Successfully retrieved product',
-    );
+      sendSuccess(
+        res,
+        { paginatedResult, top10By: type, top10Results },
+        'Successfully retrieved product',
+      );
+    });
   } catch (error) {
     console.log('Error in getAllProductController:', error);
     return next(error);
   }
+};
+
+// Get filtered products
+export const getFilteredProductsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await paginationDtoWrapper(req, async (paginationDto) => {
+      const { page, limit, order } = paginationDto;
+      const type = (req.query.type || 'default') as TFilteredProductType;
+      const priceRange = (req.query?.priceRange || '') as string;
+      const categories = (req.query?.categories || '') as string;
+      const sizes = (req.query?.sizes || '') as string;
+      const colors = (req.query?.colors || '') as string;
+      const skip = (page - 1) * limit;
+
+      const minRange = 0;
+      const maxRange = 10000;
+
+      const parsedPriceRange = priceRange
+        ? priceRange.split(',').map(Number)
+        : [minRange, maxRange];
+      const categoryArray = categories ? categories.split(',') : [];
+      const sizeArray = sizes ? sizes.split(',') : [];
+      const colorArray = colors ? colors.split(',') : [];
+
+      const minRangeStr = (parsedPriceRange[0] || minRange).toString();
+      const maxRangeStr = (parsedPriceRange[1] || maxRange).toString();
+
+      const filters = and(
+        // price range
+        gte(productsTable.salePrice, minRangeStr),
+        lte(productsTable.salePrice, maxRangeStr),
+
+        // startingDate / endingDate logic
+        type === 'event'
+          ? isNotNull(productsTable.startingDate)
+          : isNull(productsTable.startingDate),
+
+        // categories (if provided)
+        categoryArray.length > 0
+          ? inArray(productsTable.category, categoryArray)
+          : undefined,
+
+        // sizes (if provided) → hasSome equivalent
+        sizeArray.length > 0
+          ? arrayOverlaps(productsTable.sizes, sizeArray)
+          : undefined,
+
+        // colors (if provided) → hasSome equivalent
+        colorArray.length > 0
+          ? arrayOverlaps(productsTable.colors, colorArray)
+          : undefined,
+      );
+
+      const orderFunc = order === Order.ASC ? asc : desc;
+
+      const [productsResults, countResult] = await Promise.all([
+        // fetch all products
+        appDb.query.productsTable.findMany({
+          where: filters,
+          orderBy: orderFunc(productsTable.createdAt),
+          limit,
+          offset: skip,
+          with: {
+            images: true,
+            shop: { with: { avatar: true } },
+          },
+        }),
+
+        // count products
+        appDb.select({ total: count() }).from(productsTable).where(filters),
+      ]);
+
+      const itemCount = countResult?.[0]?.total || 0;
+
+      const paginatedResult = new PaginationResultDto(
+        productsResults,
+        itemCount,
+        paginationDto,
+      );
+
+      sendSuccess(res, paginatedResult, 'Successfully retrieved product');
+    });
+  } catch (error) {
+    console.log('Error in getFilteredController:', error);
+    return next(error);
+  }
+};
+
+// Get searched products
+export const getSearchedProductsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await paginationDtoWrapper(req, async (paginationDto) => {
+      const { page, limit, order } = paginationDto;
+      const query = (req.query.q || '') as string;
+      const skip = (page - 1) * limit;
+
+      if (!query) {
+        throw new ValidationError('Query parameter "q" is required');
+      }
+
+      const orderFunc = order === Order.ASC ? asc : desc;
+
+      const safeQuery = query.trim();
+
+      const searchFilter = or(
+        ilike(productsTable.title, `%${safeQuery}%`),
+        ilike(productsTable.description, `%${safeQuery}%`),
+        ilike(productsTable.detailedDescription, `%${safeQuery}%`),
+        ilike(productsTable.category, `%${safeQuery}%`),
+      );
+
+      const [productsResults, countResult] = await Promise.all([
+        // fetch all products
+        appDb.query.productsTable.findMany({
+          where: searchFilter,
+          orderBy: orderFunc(productsTable.createdAt),
+          limit,
+          offset: skip,
+          columns: {
+            id: true,
+            title: true,
+            slug: true,
+            salePrice: true,
+            category: true,
+          },
+          with: {
+            images: true,
+          },
+        }),
+
+        // count products
+        appDb
+          .select({ total: count() })
+          .from(productsTable)
+          .where(searchFilter),
+      ]);
+
+      const itemCount = countResult?.[0]?.total || 0;
+
+      const paginatedResult = new PaginationResultDto(
+        productsResults,
+        itemCount,
+        paginationDto,
+      );
+
+      sendSuccess(res, paginatedResult, 'Successfully retrieved product');
+    });
+  } catch (error) {
+    console.log('Error in getSearchedProductsController:', error);
+    return next(error);
+  }
+};
+
+// Get filtered shops
+export const getFilteredShopsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await paginationDtoWrapper(req, async (paginationDto) => {
+      const { page, limit, order } = paginationDto;
+      const countries = (req.query?.countries || '') as string;
+      const categories = (req.query?.categories || '') as string;
+      const skip = (page - 1) * limit;
+
+      const categoryArray = categories ? categories.split(',') : [];
+      const countriesArray = countries ? countries.split(',') : [];
+
+      const filters = and(
+        // categories (if provided)
+        categoryArray.length > 0
+          ? inArray(shopsTable.category, categoryArray)
+          : undefined,
+
+        // countries (if provided) → hasSome equivalent
+        countriesArray.length > 0
+          ? inArray(shopsTable.country, countriesArray)
+          : undefined,
+      );
+
+      const orderFunc = order === Order.ASC ? asc : desc;
+
+      const [shopResults, countResult] = await Promise.all([
+        // fetch all shop
+        appDb.query.shopsTable.findMany({
+          where: filters,
+          orderBy: orderFunc(shopsTable.createdAt),
+          limit,
+          offset: skip,
+          with: {
+            avatar: true,
+            seller: true,
+          },
+        }),
+
+        // count shop
+        appDb.select({ total: count() }).from(shopsTable).where(filters),
+      ]);
+
+      const itemCount = countResult?.[0]?.total || 0;
+
+      const paginatedResult = new PaginationResultDto(
+        shopResults,
+        itemCount,
+        paginationDto,
+      );
+
+      sendSuccess(res, paginatedResult, 'Successfully retrieved shops');
+    });
+  } catch (error) {
+    console.log('Error in getFilteredShopsController:', error);
+    return next(error);
+  }
+};
+
+// Get top shops
+export const getTopShopsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    // aggregate total sales per shop from orders
+
+    const top10ShopsData = await appDb
+      .select({
+        id: shopsTable.id,
+        name: shopsTable.name,
+        ratings: shopsTable.ratings,
+        coverBanner: shopsTable.coverBanner,
+        address: shopsTable.address,
+        category: shopsTable.category,
+
+        avatar: {
+          fileId: avatarTable.fileId,
+          fileUrl: avatarTable.fileUrl,
+        },
+
+        totalSales: sql<number>`SUM(${ordersTable.total})`.as('total_sales'),
+      })
+      .from(ordersTable)
+      .innerJoin(shopsTable, eq(ordersTable.shopId, shopsTable.id))
+      .leftJoin(avatarTable, eq(shopsTable.avatarId, avatarTable.id))
+      .groupBy(shopsTable.id, avatarTable.id)
+      .orderBy(desc(sql`SUM(${ordersTable.total})`))
+      .limit(10);
+
+    sendSuccess(res, top10ShopsData, 'Successfully retrieved top shops');
+  } catch (error) {
+    console.log('Error in getTopShopsController:', error);
+    return next(error);
+  }
+};
+
+// Get product by Id
+export const getProductByIdController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await baseGetProductBy(req, res, 'id');
+  } catch (error) {
+    console.log('Error in getProductByIdController:', error);
+    return next(error);
+  }
+};
+
+// Get product by slug
+export const getProductBySlugController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await baseGetProductBy(req, res, 'slug');
+  } catch (error) {
+    console.log('Error in getProductBySlugController:', error);
+    return next(error);
+  }
+};
+
+const baseGetProductBy = async (
+  req: Request,
+  res: Response,
+  by: 'id' | 'slug',
+) => {
+  let product;
+
+  if (by === 'slug' && !!req.params?.slug) {
+    product = await appDb.query.productsTable.findFirst({
+      where: and(eq(productsTable.slug, req.params.slug)),
+      with: { images: true, shop: true },
+    });
+  } else {
+    product = await appDb.query.productsTable.findFirst({
+      where: and(eq(productsTable.id, req.params?.id)),
+      with: { images: true, shop: true },
+    });
+  }
+
+  if (!product) {
+    throw new NotFoundError('Product not found');
+  }
+
+  sendSuccess(res, product, 'Successfully retrieved product');
 };
 
 const baseProductCheck = async (req: Request) => {

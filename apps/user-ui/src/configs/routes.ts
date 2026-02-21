@@ -15,7 +15,7 @@ class Routes {
   static cart = '/cart';
   static product = '/product';
   static shop = '/shop';
-  static offers = '/offers';
+  static offer = '/offer';
   static becomeSeller = '/become-seller';
   static inbox = '/inbox';
 }

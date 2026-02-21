@@ -11,22 +11,24 @@ import { ProductDetailsCard } from './ProductDetailsCard';
 import { useAppStore } from '@/store';
 import { useLocationTracking } from '@/hooks/use-location-tracking';
 import { useDeviceInfo } from '@/hooks/use-device-tracking';
+import { useSendKafkaEvent } from '@/actions/mutations/base.mutation';
 
 const iconWrapperClass =
   'bg-white rounded-full p-[6px] shadow-md flex items-center justify-center';
 
 type Props = {
-  currentUser: TUser;
+  currentUser?: TUser;
   product: TProductWithImagesAndShop;
-  isEvent?: boolean;
 };
 
 export const ProductCard = (props: Props) => {
-  const { product, isEvent, currentUser } = props;
+  const { product, currentUser } = props;
   const [timeLeft, setTimeLeft] = useState('');
   const [openPreview, setOpenPreview] = useState<boolean>(false);
   const { location } = useLocationTracking();
   const { deviceInfo } = useDeviceInfo();
+
+  const kafkaEventSender = useSendKafkaEvent();
 
   const store = useAppStore((state) => state);
   const {
@@ -40,6 +42,8 @@ export const ProductCard = (props: Props) => {
 
   const isWishListed = wishlist.some((item) => item.id === product.id);
   const isInCart = cart.some((item) => item.id === product.id);
+
+  const isEvent = !!product.startingDate;
 
   useEffect(() => {
     const endingDate = product?.endingDate;
@@ -141,12 +145,14 @@ export const ProductCard = (props: Props) => {
                       location,
                       deviceInfo,
                       user: currentUser,
+                      sendEvent: kafkaEventSender.mutate,
                     })
                   : addToWishList({
                       product,
                       deviceInfo,
                       location,
                       user: currentUser,
+                      sendEvent: kafkaEventSender.mutate,
                     })
               }
             >
@@ -178,12 +184,14 @@ export const ProductCard = (props: Props) => {
                       location,
                       deviceInfo,
                       user: currentUser,
+                      sendEvent: kafkaEventSender.mutate,
                     })
                   : addToCart({
                       product,
                       deviceInfo,
                       location,
                       user: currentUser,
+                      sendEvent: kafkaEventSender.mutate,
                     })
               }
             >

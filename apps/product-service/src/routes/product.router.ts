@@ -9,7 +9,13 @@ import {
   getAllProductsContract,
   getCategoriesContract,
   getDiscountCodesContract,
+  getFilteredProductsContract,
+  getFilteredShopsContract,
+  getProductByIdContract,
+  getProductBySlugContract,
+  getSearchedProductsContract,
   getShopProductContract,
+  getTopShopsContract,
   restoreProductContract,
   uploadProductImageContract,
 } from '../contracts/product.contract';
@@ -22,7 +28,13 @@ import {
   getAllProductsController,
   getCategoriesController,
   getDiscountCodesController,
+  getFilteredProductsController,
+  getFilteredShopsController,
+  getProductByIdController,
+  getProductBySlugController,
+  getSearchedProductsController,
   getShopProductController,
+  getTopShopsController,
   restoreProductController,
   uploadProductImageController,
 } from '../controllers/product.controller';
@@ -37,6 +49,40 @@ registerRoute(productRouter, getShopProductContract, getShopProductController);
 
 // get all product
 registerRoute(productRouter, getAllProductsContract, getAllProductsController);
+
+// get filtered product
+registerRoute(
+  productRouter,
+  getFilteredProductsContract,
+  getFilteredProductsController,
+);
+
+// get search products
+registerRoute(
+  productRouter,
+  getSearchedProductsContract,
+  getSearchedProductsController,
+);
+
+// get filtered shops
+registerRoute(
+  productRouter,
+  getFilteredShopsContract,
+  getFilteredShopsController,
+);
+
+// get top shops
+registerRoute(productRouter, getTopShopsContract, getTopShopsController);
+
+// get product by Id
+registerRoute(productRouter, getProductByIdContract, getProductByIdController);
+
+// get product by slug
+registerRoute(
+  productRouter,
+  getProductBySlugContract,
+  getProductBySlugController,
+);
 
 // Delete product
 registerRoute(productRouter, deleteProductContract, deleteProductController);

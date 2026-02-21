@@ -23,6 +23,7 @@ import {
 import { BiTrash } from 'react-icons/bi';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import { useSendKafkaEvent } from '@/actions/mutations/base.mutation';
 
 const tableHeadings = ['Product', 'Price', 'Quantity', 'Action'];
 
@@ -32,6 +33,7 @@ const WishlistPage = () => {
 
   const userQuery = useQuery(getUserOptions());
   const currentUser = userQuery?.data;
+  const kafkaEventSender = useSendKafkaEvent();
 
   const store = useAppStore((state) => state);
   const { wishlist, removeFromWishList, cart, addToCart } = store;
@@ -101,6 +103,7 @@ const WishlistPage = () => {
                                 deviceInfo,
                                 user: currentUser,
                                 product: item,
+                                sendEvent: kafkaEventSender.mutate,
                               })
                             }
                           >
@@ -114,6 +117,7 @@ const WishlistPage = () => {
                                 deviceInfo,
                                 user: currentUser,
                                 id: item.id,
+                                sendEvent: kafkaEventSender.mutate,
                               })
                             }
                           >

@@ -15,10 +15,11 @@ import { FaCartPlus } from 'react-icons/fa';
 import { useAppStore } from '@/store';
 import { useLocationTracking } from '@/hooks/use-location-tracking';
 import { useDeviceInfo } from '@/hooks/use-device-tracking';
+import { useSendKafkaEvent } from '@/actions/mutations/base.mutation';
 
 type Props = {
   product: TProductWithImagesAndShop;
-  currentUser: TUser;
+  currentUser?: TUser;
   onClose?: () => void;
 };
 
@@ -31,10 +32,11 @@ export const ProductDetailsCard = (props: Props) => {
   const [isSelectedSize, setIsSelectedSize] = useState<string | null>(
     product?.sizes?.[0] || null,
   );
-  const [quantity, setQuantity] = useState(1);
 
   const { location } = useLocationTracking();
   const { deviceInfo } = useDeviceInfo();
+
+  const kafkaEventSender = useSendKafkaEvent();
 
   const store = useAppStore((state) => state);
   const {
@@ -253,12 +255,14 @@ export const ProductDetailsCard = (props: Props) => {
                     location,
                     deviceInfo,
                     user: currentUser,
+                    sendEvent: kafkaEventSender.mutate,
                   })
                 : addToWishList({
                     product,
                     deviceInfo,
                     location,
                     user: currentUser,
+                    sendEvent: kafkaEventSender.mutate,
                   })
             }
           >
@@ -276,12 +280,14 @@ export const ProductDetailsCard = (props: Props) => {
                     location,
                     deviceInfo,
                     user: currentUser,
+                    sendEvent: kafkaEventSender.mutate,
                   })
                 : addToCart({
                     product,
                     deviceInfo,
                     location,
                     user: currentUser,
+                    sendEvent: kafkaEventSender.mutate,
                   })
             }
           >

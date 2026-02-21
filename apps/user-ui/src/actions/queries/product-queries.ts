@@ -1,15 +1,16 @@
 import { axiosInstance } from '@/lib/axios';
 import {
   TBaseServerResponse,
+  TBaseServerResponseWithPagination,
   TPaginatedServerResponse,
   TProduct,
   TProductQueryType,
   TProductWithImagesAndShop,
 } from '@e-shop-app/packages/types';
 import { queryOptions } from '@tanstack/react-query';
-import { GET_PRODUCTS } from '../base-action-constants';
+import { GET_PRODUCTS, GET_PRODUCTS_OFFERS } from '../base-action-constants';
 
-export const getProductsQueryOptions = (type: TProductQueryType) => {
+export const getProductsQueryOptions = (type: TProductQueryType = 'all') => {
   return queryOptions({
     queryKey: [GET_PRODUCTS, type],
     queryFn: async () => {
@@ -25,6 +26,26 @@ export const getProductsQueryOptions = (type: TProductQueryType) => {
 
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.message || 'Failed to fetch products');
+      }
+
+      return response.data.data;
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+export const getProductOffersOptions = () => {
+  return queryOptions({
+    queryKey: [GET_PRODUCTS_OFFERS],
+    queryFn: async () => {
+      const response = await axiosInstance.get<
+        TBaseServerResponseWithPagination<TProductWithImagesAndShop[]>
+      >(`/product/get-filtered-products?type=event&`);
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error(
+          response.data.message || 'Failed to fetch product offers',
+        );
       }
 
       return response.data.data;

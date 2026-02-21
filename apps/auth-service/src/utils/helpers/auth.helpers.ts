@@ -277,6 +277,7 @@ export const handleBaseVerifyAccount = async (
         ...baseInsertData,
         phoneNumber: newBody.phoneNumber,
         country: newBody.country,
+        shopId: null,
       })
       .returning();
   } else {

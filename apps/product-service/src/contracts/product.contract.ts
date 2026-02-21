@@ -1,18 +1,20 @@
+import { multerUpload } from '@e-shop-app/packages/libs/multer';
 import {
-  isCombinedAuthenticatedMiddleware,
   isSellerAuthenticatedMiddleware,
   isUserAuthenticatedMiddleware,
 } from '@e-shop-app/packages/middlewares';
+import {
+  TFilteredProductType,
+  TProductQueryType,
+} from '@e-shop-app/packages/types';
 import { RouteContract } from '@e-shop-app/packages/types/base.type';
+import { paginationDtoQueryArray } from '@e-shop-app/packages/utils';
 import {
   baseApiResponse,
   createDiscountCodesSchema,
   productSchema,
   uploadProductImageResponseSchema,
 } from '@e-shop-app/packages/zod-schemas';
-import { multerUpload } from '@e-shop-app/packages/libs/multer';
-import { paginationDtoQueryArray } from '@e-shop-app/packages/utils';
-import { TProductQueryType } from '@e-shop-app/packages/types';
 
 const baseContract = {
   tags: ['Product'],
@@ -50,7 +52,7 @@ export const getDiscountCodesContract = {
 export const deleteDiscountCodeContract = {
   ...baseContract,
   method: 'delete',
-  path: '/api/product/delete-discount-code/:id',
+  path: '/api/product/delete-discount-code/{id}',
   routePath: '/delete-discount-code/:id',
   request: {
     params: [
@@ -74,7 +76,7 @@ export const uploadProductImageContract = {
 export const deleteProductImageContract = {
   ...baseContract,
   method: 'delete',
-  path: '/api/product/delete-product-image/:fileId',
+  path: '/api/product/delete-product-image/{fileId}',
   routePath: '/delete-product-image/:fileId',
   request: {
     params: [{ name: 'fileId', in: 'path', schema: { type: 'string' } }],
@@ -125,10 +127,139 @@ export const getAllProductsContract = {
   otherMiddlewares: [isUserAuthenticatedMiddleware],
 } as const satisfies RouteContract;
 
+export const getFilteredProductsContract = {
+  ...baseContract,
+  method: 'get',
+  path: '/api/product/get-filtered-products',
+  routePath: '/get-filtered-products',
+  request: {
+    query: [
+      ...paginationDtoQueryArray,
+      {
+        name: 'type',
+        in: 'query',
+        schema: {
+          type: 'string',
+          enum: ['default', 'event'] satisfies TFilteredProductType[],
+          default: 'default',
+        },
+      },
+      {
+        name: 'priceRange',
+        in: 'query',
+        schema: {
+          type: 'string',
+        },
+      },
+      {
+        name: 'sizes',
+        in: 'query',
+        schema: {
+          type: 'string',
+        },
+      },
+      {
+        name: 'colors',
+        in: 'query',
+        schema: {
+          type: 'string',
+        },
+      },
+      {
+        name: 'categories',
+        in: 'query',
+        schema: {
+          type: 'string',
+        },
+      },
+    ],
+  },
+  otherMiddlewares: [],
+} as const satisfies RouteContract;
+
+export const getSearchedProductsContract = {
+  ...baseContract,
+  method: 'get',
+  path: '/api/product/get-searched-products',
+  routePath: '/get-searched-products',
+  request: {
+    query: [
+      ...paginationDtoQueryArray,
+      {
+        name: 'q',
+        in: 'query',
+        schema: {
+          type: 'string',
+        },
+      },
+    ],
+  },
+  otherMiddlewares: [],
+} as const satisfies RouteContract;
+
+export const getFilteredShopsContract = {
+  ...baseContract,
+  method: 'get',
+  path: '/api/product/get-filtered-shops',
+  routePath: '/get-filtered-shops',
+  request: {
+    query: [
+      ...paginationDtoQueryArray,
+      {
+        name: 'countries',
+        in: 'query',
+        schema: {
+          type: 'string',
+        },
+      },
+      {
+        name: 'categories',
+        in: 'query',
+        schema: {
+          type: 'string',
+        },
+      },
+    ],
+  },
+  otherMiddlewares: [],
+} as const satisfies RouteContract;
+
+export const getTopShopsContract = {
+  ...baseContract,
+  method: 'get',
+  path: '/api/product/get-top-shops',
+  routePath: '/get-top-shops',
+  otherMiddlewares: [],
+} as const satisfies RouteContract;
+
+export const getProductByIdContract = {
+  ...baseContract,
+  method: 'get',
+  path: '/api/product/get-product-by-id/{id}',
+  routePath: '/get-product-by-id/:id',
+  request: {
+    params: [
+      { name: 'id', in: 'path', schema: { type: 'string', format: 'uuid' } },
+    ],
+  },
+  otherMiddlewares: [isUserAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const getProductBySlugContract = {
+  ...baseContract,
+  method: 'get',
+  path: '/api/product/get-product-by-slug/{slug}',
+  routePath: '/get-product-by-slug/:slug',
+  request: {
+    params: [{ name: 'slug', in: 'path', schema: { type: 'string' } }],
+  },
+  otherMiddlewares: [],
+} as const satisfies RouteContract;
+
 export const deleteProductContract = {
   ...baseContract,
   method: 'put',
-  path: '/api/product/delete-product/:id',
+  path: '/api/product/delete-product/{id}',
   routePath: '/delete-product/:id',
   request: {
     params: [
@@ -141,7 +272,7 @@ export const deleteProductContract = {
 export const restoreProductContract = {
   ...baseContract,
   method: 'put',
-  path: '/api/product/restore-product/:id',
+  path: '/api/product/restore-product/{id}',
   routePath: '/restore-product/:id',
   request: {
     params: [

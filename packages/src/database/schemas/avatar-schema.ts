@@ -6,7 +6,7 @@ export const avatarTable = pgTable('avatars', {
   fileId: text('file_id').notNull(),
   fileUrl: text('file_url').notNull(),
 
-  userId: uuid('user_id').notNull(),
+  userId: uuid('user_id').notNull().unique(),
 
   userType: text('user_type')
     .notNull()

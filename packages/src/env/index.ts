@@ -36,11 +36,14 @@ export const env = {
     'PRODUCT_SERVICE_URL',
     'http://localhost:4002',
   ),
+  KAFKA_SERVICE_URL: requireEnv('KAFKA_SERVICE_URL', 'http://localhost:4003'),
 
   // Ports
   GATEWAY_PORT: Number(requireEnv('GATEWAY_PORT', '4000')),
   AUTH_SERVICE_PORT: Number(requireEnv('AUTH_SERVICE_PORT', '4001')),
   PRODUCT_SERVICE_PORT: Number(requireEnv('PRODUCT_SERVICE_PORT', '4002')),
+  KAFKA_SERVICE_PORT: Number(requireEnv('KAFKA_SERVICE_PORT', '4003')),
+
   // Email
   SMTP_HOST: requireEnv('SMTP_HOST', ''),
   SMTP_PORT: Number(requireEnv('SMTP_PORT', '587')),
@@ -58,6 +61,9 @@ export const env = {
   IMAGEKIT_PUBLIC_KEY: requireEnv('IMAGEKIT_PUBLIC_KEY', ''),
   IMAGEKIT_PRIVATE_KEY: requireEnv('IMAGEKIT_PRIVATE_KEY', ''),
   IMAGEKIT_URL_ENDPOINT: requireEnv('IMAGEKIT_URL_ENDPOINT', ''),
+
+  // Kafka
+  KAFKA_BROKER: requireEnv('KAFKA_BROKER', ''),
 
   //  --------------------------------------------------
   // Frontend Environment Variables

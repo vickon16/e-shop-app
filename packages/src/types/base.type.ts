@@ -26,7 +26,11 @@ export type TPaginatedServerResponse<T> = {
 };
 
 export type TBaseServerResponse<T> = TBaseApiResponse &
-  TPaginatedServerResponse<T>;
+  Pick<TPaginatedServerResponse<T>, 'data'>;
+
+export type TBaseServerResponseWithPagination<T> = TBaseApiResponse & {
+  data: TPaginatedServerResponse<T>;
+};
 
 // api-response.ts
 export interface ApiSuccessResponse<T = unknown> extends TBaseApiResponse {

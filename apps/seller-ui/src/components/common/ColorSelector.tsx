@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
-import { type FieldProps, type TSelect } from '@e-shop-app/packages/types';
-import { type FieldValues, type Path } from 'react-hook-form';
-import CustomSelect from '@/components/common/CustomSelect';
-import { FormControl } from '../ui/form';
 import { cn } from '@/lib/utils';
+import { baseColor, defaultColors } from '@e-shop-app/packages/constants';
+import { type FieldProps } from '@e-shop-app/packages/types';
+import { useState } from 'react';
+import { type FieldValues, type Path } from 'react-hook-form';
 import { LuPlus } from 'react-icons/lu';
 import { Button } from '../ui/button';
-import { baseColor, defaultColors } from '@e-shop-app/packages/constants';
+import { FormControl } from '../ui/form';
 
 export function ColorSelector<T extends FieldValues, E extends Path<T>>(
   props: FieldProps<T, E>,
@@ -18,7 +17,9 @@ export function ColorSelector<T extends FieldValues, E extends Path<T>>(
 
   const fieldValue = (field.value || []) as string[];
 
-  const colors = Array.from(new Set([...defaultColors, ...customColors]));
+  const defaultColorsValues = defaultColors.map((color) => color.value);
+
+  const colors = Array.from(new Set([...defaultColorsValues, ...customColors]));
 
   return (
     <FormControl>

@@ -14,6 +14,7 @@ const host = env.BASE_HOST;
 const gatewayPort = env.GATEWAY_PORT;
 const authServiceUrl = env.AUTH_SERVICE_URL;
 const productServiceUrl = env.PRODUCT_SERVICE_URL;
+const kafkaServiceUrl = env.KAFKA_SERVICE_URL;
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.get('/api/gateway-health', (_req, res) => {
 // Example: main backend service
 app.use('/api/auth', proxyHelper(authServiceUrl, 'auth'));
 app.use('/api/product', proxyHelper(productServiceUrl, 'product'));
+app.use('/api/kafka', proxyHelper(kafkaServiceUrl, 'kafka'));
 
 // Uncomment this if the gateway have its own routes
 // app.use(express.json({ limit: '100mb' }));

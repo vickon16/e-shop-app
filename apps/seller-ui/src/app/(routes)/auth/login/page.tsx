@@ -90,7 +90,7 @@ const LoginPage = () => {
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
-              className="w-full space-y-3"
+              className="w-full space-y-3 text-foreground"
             >
               {/* Business Email */}
               <FormField

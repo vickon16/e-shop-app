@@ -18,11 +18,9 @@ export const sellersTable = pgTable('sellers', {
   country: text('country').notNull(),
   password: text('password').notNull(),
   stripeId: text('stripe_id'),
-  shopId: uuid('shop_id')
-    .notNull()
-    .references((): AnyPgColumn => shopsTable.id, {
-      onDelete: 'cascade',
-    }),
+  shopId: uuid('shop_id').references((): AnyPgColumn => shopsTable.id, {
+    onDelete: 'cascade',
+  }),
   emailVerified: text('email_verified'),
   avatarId: uuid('avatar_id').references((): AnyPgColumn => avatarTable.id),
 

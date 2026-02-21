@@ -77,6 +77,11 @@
       "types": "./dist/libs/multer/index.d.ts",
       "import": "./dist/libs/multer/index.js",
       "default": "./dist/libs/multer/index.js"
+    },
+    "./libs/kafka": {
+      "types": "./dist/libs/kafka/index.d.ts",
+      "import": "./dist/libs/kafka/index.js",
+      "default": "./dist/libs/kafka/index.js"
     }
   },
   "dependencies": {

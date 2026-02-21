@@ -38,7 +38,7 @@ const SignUpPage = () => {
       try {
         const response = await createShopMutation.mutateAsync({
           sellerId,
-          refreshUrl: `${Routes.appUrl}${Routes.auth.signup}`,
+          refreshUrl: `${Routes.sellerAppUrl}${Routes.auth.signup}`,
           returnUrl: Routes.sellerSuccessLink,
         });
 
@@ -54,7 +54,7 @@ const SignUpPage = () => {
   const isLoadingCreateLink = isPending || createShopMutation.isPending;
 
   return (
-    <div className="w-full flex flex-col items-center pt-10 min-h-screen">
+    <div className="w-full flex flex-col items-center pt-10 min-h-screen dark">
       {/* Stepper */}
 
       <div className="relative flex items-center justify-between md:w-[40%] mb-8">
