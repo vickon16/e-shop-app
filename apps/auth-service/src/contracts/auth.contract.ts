@@ -1,4 +1,5 @@
 import {
+  isCombinedAuthenticatedMiddleware,
   isSellerAuthenticatedMiddleware,
   isUserAuthenticatedMiddleware,
 } from '@e-shop-app/packages/middlewares';
@@ -12,6 +13,7 @@ import {
   emailSchema,
   loginSchema,
   resetPasswordSchema,
+  shippingAddressSchema,
   verifyOtpSchema,
   verifySellerSchema,
   verifyUserSchema,
@@ -202,4 +204,51 @@ export const createStripeConnectLinkContract = {
   responses: {
     201: baseApiResponse,
   },
+} as const satisfies RouteContract;
+
+export const createUserAddressContract = {
+  ...baseContract,
+  method: 'post',
+  path: '/api/auth/create-user-address',
+  routePath: '/create-user-address',
+  request: {
+    body: shippingAddressSchema,
+  },
+  responses: {
+    201: baseApiResponse,
+  },
+  otherMiddlewares: [isCombinedAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const getUserAddressesContract = {
+  ...baseContract,
+  method: 'get',
+  path: '/api/auth/get-user-addresses',
+  routePath: '/get-user-addresses',
+  otherMiddlewares: [isCombinedAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const deleteUserAddressContract = {
+  ...baseContract,
+  method: 'delete',
+  path: '/api/auth/delete-user-address/{addressId}',
+  routePath: '/delete-user-address/:addressId',
+  request: {
+    params: [
+      {
+        name: 'addressId',
+        schema: { type: 'string' },
+        in: 'path',
+      },
+    ],
+  },
+  otherMiddlewares: [isCombinedAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const logoutContract = {
+  ...baseContract,
+  method: 'get',
+  path: '/api/auth/logout-user',
+  routePath: '/logout-user',
+  otherMiddlewares: [isCombinedAuthenticatedMiddleware],
 } as const satisfies RouteContract;

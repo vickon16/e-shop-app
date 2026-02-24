@@ -10,6 +10,7 @@ import {
   ReferenceObject,
 } from '@asteasolutions/zod-to-openapi/dist/types.js';
 import type { Row } from '@tanstack/react-table';
+import { TUserAnalyticsAction } from './drizzle.type.js';
 
 export type TTableMeta = {
   page: number;
@@ -103,3 +104,8 @@ export interface TDataTableRowAction<TData> {
   row: Row<TData>;
   variant: 'update' | 'cancel';
 }
+
+export type TCustomUserAnalyticsAction = Omit<
+  TUserAnalyticsAction,
+  'id' | 'createdAt' | 'updatedAt' | 'analyticsId'
+>;

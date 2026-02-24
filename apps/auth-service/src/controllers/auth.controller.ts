@@ -1,5 +1,8 @@
 import {
+  addressTable,
+  and,
   appDb,
+  desc,
   eq,
   sellersTable,
   shopsTable,
@@ -28,6 +31,7 @@ import {
   TCreateUserSchema,
   TLoginSchema,
   TResetPasswordSchema,
+  TShippingAddressSchema,
   TVerifyOtpSchema,
 } from '@e-shop-app/packages/zod-schemas';
 import { NextFunction, Request, Response } from 'express';
@@ -146,8 +150,6 @@ export const loginController = async (
       console.log('Getting user by email');
       existingUser = await getUserBy('email', email, true);
     }
-
-    console.log('Got here', existingUser);
 
     if (!existingUser) {
       throw new NotFoundError('M: Invalid email or password.');
@@ -418,6 +420,118 @@ export const createShopController = async (
   }
 };
 
+export const createUserAddressController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const body = req.body as TShippingAddressSchema;
+
+    if (body.isDefault === 'true') {
+      // set existing default address to false
+      await appDb
+        .update(addressTable)
+        .set({ isDefault: false })
+        .where(
+          and(
+            eq(addressTable.userId, authUser.userId),
+            eq(addressTable.isDefault, true),
+          ),
+        );
+    }
+
+    const createdAddress = await appDb
+      .insert(addressTable)
+      .values({
+        ...body,
+        userId: authUser.userId,
+        userType: authUser.role,
+        isDefault: body.isDefault === 'true',
+      })
+      .returning();
+
+    const newAddress = createdAddress?.[0];
+
+    if (!newAddress) {
+      throw new Error('Failed to create address');
+    }
+
+    sendSuccess(res, newAddress, 'Address created successfully');
+  } catch (error) {
+    console.log('Error in createUserAddressController:', error);
+    return next(error);
+  }
+};
+
+export const getUserAddressesController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const userAddresses = await appDb.query.addressTable.findMany({
+      where: eq(addressTable.userId, authUser.userId),
+      orderBy: desc(addressTable.createdAt),
+    });
+
+    sendSuccess(res, userAddresses, 'User addresses retrieved successfully');
+  } catch (error) {
+    console.log('Error in getUserAddressesController:', error);
+    return next(error);
+  }
+};
+
+export const deleteUserAddressController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const addressId = req.params?.addressId;
+
+    if (!addressId) {
+      throw new Error('Address ID is required');
+    }
+
+    const existingAddress = await appDb.query.addressTable.findFirst({
+      where: and(
+        eq(addressTable.userId, authUser.userId),
+        eq(addressTable.id, addressId),
+      ),
+    });
+
+    if (!existingAddress) {
+      throw new NotFoundError('Address not found');
+    }
+
+    await appDb
+      .delete(addressTable)
+      .where(eq(addressTable.id, addressId))
+      .execute();
+
+    sendSuccess(res, null, 'Address deleted successfully');
+  } catch (error) {
+    console.log('Error in deleteUserAddressController:', error);
+    return next(error);
+  }
+};
+
 export const createStripeConnectLinkController = async (
   req: Request,
   res: Response,
@@ -465,6 +579,32 @@ export const createStripeConnectLinkController = async (
     );
   } catch (error) {
     console.log('Error in createStripeConnectLink:', error);
+    return next(error);
+  }
+};
+
+export const logoutController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    if (authUser.role === 'user') {
+      res.clearCookie('access_token');
+      res.clearCookie('refresh_token');
+    } else {
+      res.clearCookie('seller_access_token');
+      res.clearCookie('seller_refresh_token');
+    }
+
+    sendSuccess(res, null, 'Logged out successfully');
+  } catch (error) {
+    console.log('Error in logoutController:', error);
     return next(error);
   }
 };

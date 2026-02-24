@@ -14,3 +14,12 @@ export const constructOtpWithEmail = (
 
   return `otp-${type}:${email}`;
 };
+
+export const PAYMENT_SESSION_PREFIX = 'payment-session';
+
+export const constructPaymentSession = (
+  userId: string,
+  sessionId: string,
+): string => {
+  return `${PAYMENT_SESSION_PREFIX}:${userId}:${sessionId}`;
+};

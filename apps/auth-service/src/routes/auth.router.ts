@@ -14,15 +14,23 @@ import {
   createShopController,
   createStripeConnectLinkController,
   getSellerController,
+  logoutController,
+  createUserAddressController,
+  deleteUserAddressController,
+  getUserAddressesController,
 } from '../controllers/auth.controller';
 import { registerRoute } from '@e-shop-app/packages/libs/swagger';
 import {
   createShopContract,
   createStripeConnectLinkContract,
+  createUserAddressContract,
+  deleteUserAddressContract,
   forgotPasswordContract,
   getSellerContract,
+  getUserAddressesContract,
   getUserContract,
   loginUserContract,
+  logoutContract,
   refreshTokenContract,
   resendOtpContract,
   resetPasswordContract,
@@ -78,11 +86,31 @@ registerRoute(authRouter, getSellerContract, getSellerController);
 // create shop
 registerRoute(authRouter, createShopContract, createShopController);
 
+// create user address
+registerRoute(
+  authRouter,
+  createUserAddressContract,
+  createUserAddressController,
+);
+
+// get user addresses
+registerRoute(authRouter, getUserAddressesContract, getUserAddressesController);
+
+// delete user address
+registerRoute(
+  authRouter,
+  deleteUserAddressContract,
+  deleteUserAddressController,
+);
+
 // create stripe connect link
 registerRoute(
   authRouter,
   createStripeConnectLinkContract,
   createStripeConnectLinkController,
 );
+
+// logout user
+registerRoute(authRouter, logoutContract, logoutController);
 
 export default authRouter;

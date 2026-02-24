@@ -11,10 +11,15 @@ import {
   userAnalyticsTable,
   productAnalyticsTable,
   userAnalyticsActionsTable,
+  addressTable,
 } from '../database/index.js';
 
 export type TUserWithPassword = InferSelectModel<typeof usersTable>;
 export type TUser = Omit<TUserWithPassword, 'password'>;
+
+export type TUserWithRelations = TUser & {
+  avatar?: TAvatar | null;
+};
 
 export type TSellerWithPassword = InferSelectModel<typeof sellersTable>;
 export type TSeller = Omit<TSellerWithPassword, 'password'>;
@@ -58,3 +63,5 @@ export type TUserAnalyticsAction = InferSelectModel<
 >;
 
 export type TProductAnalytics = InferSelectModel<typeof productAnalyticsTable>;
+
+export type TUserAddress = InferSelectModel<typeof addressTable>;

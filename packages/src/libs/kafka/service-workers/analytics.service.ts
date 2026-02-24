@@ -8,10 +8,8 @@ import {
   userAnalyticsActionsTable,
   userAnalyticsTable,
 } from '../../../database/index.js';
-import {
-  TProductAnalytics,
-  TUserAnalyticsAction,
-} from 'src/types/drizzle.type.js';
+import { TProductAnalytics } from 'src/types/drizzle.type.js';
+import { TCustomUserAnalyticsAction } from '../../../types/base.type.js';
 
 export async function updateUserAnalytics(event: TKafkaProductEventSchemaType) {
   try {
@@ -23,12 +21,7 @@ export async function updateUserAnalytics(event: TKafkaProductEventSchemaType) {
 
     const now = new Date();
 
-    type TNewEvent = Omit<
-      TUserAnalyticsAction,
-      'id' | 'createdAt' | 'updatedAt' | 'analyticsId'
-    >;
-
-    const newEvent: TNewEvent = {
+    const newEvent: TCustomUserAnalyticsAction = {
       action: event.action,
       productId: event.productId ?? null,
       shopId: event.shopId ?? null,

@@ -46,3 +46,19 @@ export const useSendKafkaEvent = () => {
     },
   });
 };
+
+export const useDeleteUserAddress = () => {
+  return useMutation({
+    mutationFn: async (addressId: string) => {
+      const response = await axiosInstance.delete<TBaseServerResponse<null>>(
+        `/auth/delete-user-address/${addressId}`,
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to delete address');
+      }
+
+      return response.data;
+    },
+  });
+};

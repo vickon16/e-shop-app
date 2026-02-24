@@ -1,3 +1,5 @@
+import { TImages, TProduct } from './drizzle.type.js';
+
 export type TProductQueryType =
   | 'all'
   | 'latest'
@@ -6,3 +8,31 @@ export type TProductQueryType =
   | 'new-arrivals';
 
 export type TFilteredProductType = 'default' | 'event';
+
+export type TCart = Pick<TProduct, 'id' | 'title' | 'shopId' | 'salePrice'> & {
+  images: TImages[];
+  quantity?: number;
+  selectedOptions?: {
+    color?: string;
+    size?: string;
+  };
+};
+
+export type TPaymentSession = {
+  cart: TCart[];
+  sessionId: string;
+  userId: string;
+  totalAmount: number;
+  sellersData: {
+    shopId: string;
+    stripeAccountId: string | null;
+    sellerId: string;
+  }[];
+  shippingAddressId?: string | null;
+  coupon?: {
+    code: string;
+    discountPercent: number;
+    discountAmount: number;
+    discountedProductId: string;
+  } | null;
+};

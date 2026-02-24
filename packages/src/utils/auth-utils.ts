@@ -34,6 +34,7 @@ export const getSellerBy = async (
           password: false, // exclude only password
         },
     with: {
+      avatar: true,
       shop: true,
     },
   });

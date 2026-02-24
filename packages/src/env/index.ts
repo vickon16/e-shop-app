@@ -37,12 +37,14 @@ export const env = {
     'http://localhost:4002',
   ),
   KAFKA_SERVICE_URL: requireEnv('KAFKA_SERVICE_URL', 'http://localhost:4003'),
+  ORDER_SERVICE_URL: requireEnv('ORDER_SERVICE_URL', 'http://localhost:4004'),
 
   // Ports
   GATEWAY_PORT: Number(requireEnv('GATEWAY_PORT', '4000')),
   AUTH_SERVICE_PORT: Number(requireEnv('AUTH_SERVICE_PORT', '4001')),
   PRODUCT_SERVICE_PORT: Number(requireEnv('PRODUCT_SERVICE_PORT', '4002')),
   KAFKA_SERVICE_PORT: Number(requireEnv('KAFKA_SERVICE_PORT', '4003')),
+  ORDER_SERVICE_PORT: Number(requireEnv('ORDER_SERVICE_PORT', '4004')),
 
   // Email
   SMTP_HOST: requireEnv('SMTP_HOST', ''),
@@ -56,6 +58,7 @@ export const env = {
   ACCESS_TOKEN_EXPIRATION: requireEnv('ACCESS_TOKEN_EXPIRATION', '15m'),
   REFRESH_TOKEN_EXPIRATION: requireEnv('REFRESH_TOKEN_EXPIRATION', '7d'),
   STRIPE_SECRET_KEY: requireEnv('STRIPE_SECRET_KEY', ''),
+  STRIPE_WEBHOOK_SECRET: requireEnv('STRIPE_WEBHOOK_SECRET', ''),
 
   // Imagekit
   IMAGEKIT_PUBLIC_KEY: requireEnv('IMAGEKIT_PUBLIC_KEY', ''),

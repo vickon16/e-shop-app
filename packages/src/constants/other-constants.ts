@@ -41,3 +41,5 @@ export const paymentMethods = [
   { label: 'Online Payments', value: 'online-payments' },
   { label: 'Cash On Delivery', value: 'cash-on-delivery' },
 ];
+
+export const orderStatus = ['paid', 'pending'] as const;

@@ -1,28 +1,10 @@
-import { useSendKafkaEvent } from '@/actions/mutations/base.mutation';
 import { TDeviceInfo } from '@/hooks/use-device-tracking';
 import { TLocationStoredData } from '@/hooks/use-location-tracking';
 import { TKafkaProductEventSchemaType } from '@e-shop-app/packages/libs/kafka';
-import {
-  TBaseServerResponse,
-  TImages,
-  TProduct,
-  TUser,
-} from '@e-shop-app/packages/types';
+import { TBaseServerResponse, TCart, TUser } from '@e-shop-app/packages/types';
 import { UseMutateFunction } from '@tanstack/react-query';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-
-type TCustomProduct = Pick<
-  TProduct,
-  'id' | 'title' | 'shopId' | 'salePrice'
-> & {
-  images: TImages[];
-  quantity?: number;
-  selectedOptions?: {
-    color?: string;
-    size?: string;
-  };
-};
 
 type TBaseAddTo = {
   user?: TUser;
@@ -36,11 +18,11 @@ type TBaseAddTo = {
 };
 
 type TAppStore = {
-  cart: TCustomProduct[];
-  wishlist: TCustomProduct[];
-  addToCart: (props: TBaseAddTo & { product: TCustomProduct }) => void;
+  cart: TCart[];
+  wishlist: TCart[];
+  addToCart: (props: TBaseAddTo & { product: TCart }) => void;
   removeFromCart: (props: TBaseAddTo & { id: string }) => void;
-  addToWishList: (props: TBaseAddTo & { product: TCustomProduct }) => void;
+  addToWishList: (props: TBaseAddTo & { product: TCart }) => void;
   removeFromWishList: (props: TBaseAddTo & { id: string }) => void;
   increaseQuantity: (productId: string) => void;
   decreaseQuantity: (productId: string) => void;

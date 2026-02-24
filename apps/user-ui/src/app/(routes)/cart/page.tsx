@@ -1,30 +1,21 @@
 'use client';
 
-import { getUserOptions } from '@/actions/queries/base-queries';
+import {
+  getUserAddressOptions,
+  getUserOptions,
+} from '@/actions/queries/base-queries';
 import { Routes } from '@/configs/routes';
 import { useDeviceInfo } from '@/hooks/use-device-tracking';
 import { useLocationTracking } from '@/hooks/use-location-tracking';
 import { useAppStore } from '@/store';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { LuChevronRight } from 'react-icons/lu';
 
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { BiTrash } from 'react-icons/bi';
+import { useSendKafkaEvent } from '@/actions/mutations/base.mutation';
 import { Button } from '@/components/ui/button';
-import Image from 'next/image';
 import { Input } from '@/components/ui/input';
-import e from 'express';
 import {
   Select,
   SelectContent,
@@ -32,7 +23,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { paymentMethods } from '@e-shop-app/packages/constants';
+import Image from 'next/image';
+import { BiTrash } from 'react-icons/bi';
 
 const tableHeadings = ['Product', 'Quantity', 'Price', 'Action'];
 
@@ -50,6 +52,15 @@ const CartPage = () => {
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
   const [couponCode, setCouponCode] = useState('');
+
+  const userAddressQuery = useQuery(getUserAddressOptions());
+  const userAddresses = userAddressQuery?.data || [];
+  const defaultAddress =
+    selectedAddressId ||
+    userAddresses.find((address) => address.isDefault)?.id ||
+    '';
+
+  const kafkaEventSender = useSendKafkaEvent();
 
   const store = useAppStore((state) => state);
   const { removeFromCart, cart, decreaseQuantity, increaseQuantity } = store;
@@ -202,6 +213,7 @@ const CartPage = () => {
                             deviceInfo,
                             user: currentUser,
                             id: item.id,
+                            sendEvent: kafkaEventSender.mutate,
                           })
                         }
                       >
@@ -261,27 +273,30 @@ const CartPage = () => {
               <div className="mb-4">
                 <h4 className="mb-2 text-sm">Select shipping address</h4>
 
-                <Select
-                  value={selectedAddressId || `home-new-york-usa`}
-                  onValueChange={setSelectedAddressId}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a shipping address" />
-                  </SelectTrigger>
+                {userAddressQuery?.isLoading ? (
+                  <p>Loading addresses...</p>
+                ) : userAddresses.length === 0 ? (
+                  <p>
+                    No addresses found. Please add an address in your profile.
+                  </p>
+                ) : (
+                  <Select
+                    value={defaultAddress}
+                    onValueChange={setSelectedAddressId}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a shipping address" />
+                    </SelectTrigger>
 
-                  <SelectContent className="max-h-70">
-                    {[
-                      {
-                        label: 'Home - New York - USA',
-                        value: 'home-new-york-usa',
-                      },
-                    ].map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectContent className="max-h-70">
+                      {userAddresses.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.label} - {item.name} - {item.country}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <hr className="my-2 text-slate-200" />
