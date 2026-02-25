@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Your Order Confirmation - Eshop</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: #f7f7f7;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        background: #fff;
+        max-width: 600px;
+        margin: 40px auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        padding: 32px 24px;
+      }
+      .header {
+        text-align: center;
+        color: #2d3748;
+        margin-bottom: 24px;
+      }
+      .order-details {
+        margin: 24px 0;
+      }
+      .order-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 24px;
+      }
+      .order-table th, .order-table td {
+        border: 1px solid #e2e8f0;
+        padding: 8px 12px;
+        text-align: left;
+      }
+      .order-table th {
+        background: #f1f5f9;
+      }
+      .total-items {
+        font-size: 0.9em;
+        font-weight: 600;
+        color: #c580c5;
+        text-align: right;
+        margin-top: 12px;
+      }
+      .total {
+        font-size: 1.1em;
+        font-weight: bold;
+        color: #2b6cb0;
+        text-align: right;
+        margin-top: 4px;
+      }
+      .cta {
+        display: inline-block;
+        background: #3182ce;
+        color: #fff;
+        padding: 12px 28px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        margin-top: 24px;
+      }
+      .footer {
+        margin-top: 32px;
+        color: #718096;
+        font-size: 0.95em;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2 class="header">Thank you for your order, <%= name %>!</h2>
+      <p>
+        We’re excited to let you know that your order has been successfully placed. Here’s a summary of your purchase:
+      </p>
+      <div class="order-details">
+        <table class="order-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Options</th>
+              <th>Qty</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% cart.forEach(function(item) { %>
+              <tr>
+                <td><%= item.title %></td>
+                <td>
+                  <% if (item.selectedOptions) { %>
+                    <% Object.entries(item.selectedOptions).forEach(function([key, value]) { %>
+                      <div><strong><%= key %>:</strong> <%= value %></div>
+                    <% }); %>
+                  <% } else { %>
+                    <em>—</em>
+                  <% } %>
+                </td>
+                <td><%= item.quantity %></td>
+                <td>$<%= Number(item.salePrice).toLocaleString() %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+        <div class="total-items">
+          Total Items: <%= totalItems %>
+        </div>
+        <div class="total">
+          Total Paid: $<%= Number(totalAmount.toFixed(2)).toLocaleString() %>
+        </div>
+      </div>
+      <a class="cta" href="<%= trackingUrl %>">Track Your Order</a>
+      <div class="footer">
+        If you have any questions, simply reply to this email.<br>
+        Thank you for shopping with Eshop!
+      </div>
+    </div>
+  </body>
+</html>

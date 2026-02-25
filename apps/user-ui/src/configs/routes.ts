@@ -18,6 +18,7 @@ class Routes {
   static offer = '/offer';
   static becomeSeller = '/become-seller';
   static inbox = '/inbox';
+  static checkout = '/checkout';
 }
 
 export type TRoutesKeys = keyof typeof Routes;

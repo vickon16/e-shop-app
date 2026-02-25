@@ -9,3 +9,4 @@ export * from './avatar-schema.js';
 export * from './analytics-schema.js';
 export * from './order-schema.js';
 export * from './address-schema.js';
+export * from './notifications-schema.js';

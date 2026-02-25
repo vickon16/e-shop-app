@@ -1,36 +1,25 @@
 import {
   AuthError,
   BadRequestError,
-  ConflictError,
   NotFoundError,
 } from '@e-shop-app/packages/error-handler';
-import { getSellerBy, sendSuccess } from '@e-shop-app/packages/utils';
-import { appStripe, orderEventHandler } from '@e-shop-app/packages/libs/stripe';
 import {
-  redis,
   PAYMENT_SESSION_PREFIX,
   constructPaymentSession,
+  redis,
 } from '@e-shop-app/packages/libs/redis';
+import { appStripe, orderEventHandler } from '@e-shop-app/packages/libs/stripe';
+import { sendSuccess } from '@e-shop-app/packages/utils';
 import { NextFunction, Request, Response } from 'express';
 
-import {
-  appDb,
-  eq,
-  imagesTable,
-  inArray,
-  productsTable,
-  sellersTable,
-  shopsTable,
-} from '@e-shop-app/packages/database';
+import { appDb, inArray, shopsTable } from '@e-shop-app/packages/database';
+import { env } from '@e-shop-app/packages/env';
+import { TPaymentSession } from '@e-shop-app/packages/types';
 import {
   TCreatePaymentIntentSchema,
   TCreatePaymentSessionSchema,
-  TProductSchema,
-  TUploadProductImageResponseSchema,
 } from '@e-shop-app/packages/zod-schemas';
-import { TPaymentSession } from '@e-shop-app/packages/types';
 import Stripe from 'stripe';
-import { env } from '@e-shop-app/packages/env';
 
 // Create order
 export const createPaymentIntentController = async (
@@ -143,8 +132,6 @@ export const createPaymentSessionController = async (
       sellerId: shop.sellerId,
     }));
 
-    console.log({ sellersData });
-
     // Calculate total amount
     const totalAmount = cart.reduce(
       (total, item) =>
@@ -172,6 +159,8 @@ export const createPaymentSessionController = async (
       JSON.stringify(paymentSessionPayload),
     );
 
+    console.log({ sellersData, sessionId, totalAmount });
+
     sendSuccess(
       res,
       { sessionId },
@@ -179,7 +168,7 @@ export const createPaymentSessionController = async (
       201,
     );
   } catch (error) {
-    console.log('Error in createPaymentIntent:', error);
+    console.log('Error in createPaymentSession:', error);
     return next(error);
   }
 };
@@ -191,6 +180,7 @@ export const verifyPaymentSessionController = async (
   next: NextFunction,
 ) => {
   try {
+    console.log({ reqParams: req.params, reqUser: req.user });
     const authUser = req.user;
     if (!authUser) {
       throw new AuthError('Unauthorized');
@@ -224,17 +214,12 @@ export const createOrderController = async (
   next: NextFunction,
 ) => {
   try {
-    const authUser = req.user;
-    if (!authUser) {
-      throw new AuthError('Unauthorized');
-    }
-
     const stripeSignature = req.headers['stripe-signature'] as string;
     if (!stripeSignature) {
       throw new BadRequestError('Stripe signature is required');
     }
 
-    const rawBody = (req as any).rawBody as Buffer;
+    const rawBody = req.body;
 
     let event: Stripe.Event;
 
@@ -248,6 +233,8 @@ export const createOrderController = async (
       console.log('Error verifying Stripe webhook signature:', error);
       throw new BadRequestError('Invalid Stripe signature');
     }
+
+    console.log('Received Stripe event:', event);
 
     await orderEventHandler(res, event);
   } catch (error) {

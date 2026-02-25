@@ -22,14 +22,30 @@ export type TCreatePaymentIntentSchema = z.infer<
 
 export const createPaymentSessionSchema = z.object({
   cart: z.array(z.any()),
-  selectedAddressId: z.string().min(1).openapi({
+  selectedAddressId: z.string().optional().openapi({
     description: 'Selected shipping address id',
     example: '',
   }),
-  coupon: z.string().optional().openapi({
-    description: 'Coupon code if available',
-    example: 'SAVE16',
-  }),
+  coupon: z
+    .object({
+      code: z.string().openapi({
+        description: 'Coupon code if available',
+        example: 'SAVE16',
+      }),
+      discountPercent: z.number().openapi({
+        description: 'Discount percentage if applicable',
+        example: 10,
+      }),
+      discountAmount: z.number().openapi({
+        description: 'Discount amount if applicable',
+        example: 100,
+      }),
+      discountedProductId: z.string().openapi({
+        description: 'ID of the product eligible for discount',
+        example: 'prod_12345',
+      }),
+    })
+    .nullable(),
 });
 
 export type TCreatePaymentSessionSchema = Omit<

@@ -1,13 +1,11 @@
 import { registerRoute } from '@e-shop-app/packages/libs/swagger';
 import express from 'express';
 import {
-  createOrderContract,
   createPaymentIntentContract,
   createPaymentSessionContract,
   verifyPaymentSessionContract,
 } from '../contracts/order.contract';
 import {
-  createOrderController,
   createPaymentIntentController,
   createPaymentSessionController,
   verifyPaymentSessionController,
@@ -35,8 +33,5 @@ registerRoute(
   verifyPaymentSessionContract,
   verifyPaymentSessionController,
 );
-
-// create order
-registerRoute(orderRouter, createOrderContract, createOrderController);
 
 export default orderRouter;

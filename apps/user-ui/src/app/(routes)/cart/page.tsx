@@ -13,7 +13,10 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { LuChevronRight } from 'react-icons/lu';
 
-import { useSendKafkaEvent } from '@/actions/mutations/base.mutation';
+import {
+  useBaseMutation,
+  useSendKafkaEvent,
+} from '@/actions/mutations/base.mutation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -35,6 +38,9 @@ import {
 import { paymentMethods } from '@e-shop-app/packages/constants';
 import Image from 'next/image';
 import { BiTrash } from 'react-icons/bi';
+import { errorToast } from '@/lib/utils';
+import { TCreatePaymentSessionSchema } from '@e-shop-app/packages/zod-schemas';
+import { useRouter } from 'next/navigation';
 
 const tableHeadings = ['Product', 'Quantity', 'Price', 'Action'];
 
@@ -51,7 +57,9 @@ const CartPage = () => {
 
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
-  const [couponCode, setCouponCode] = useState('');
+  const [coupon, setCoupon] =
+    useState<TCreatePaymentSessionSchema['coupon']>(null);
+  const router = useRouter();
 
   const userAddressQuery = useQuery(getUserAddressOptions());
   const userAddresses = userAddressQuery?.data || [];
@@ -59,6 +67,14 @@ const CartPage = () => {
     selectedAddressId ||
     userAddresses.find((address) => address.isDefault)?.id ||
     '';
+
+  const paymentSessionMutation = useBaseMutation<
+    TCreatePaymentSessionSchema,
+    { sessionId: string }
+  >({
+    endpoint: '/order/create-payment-session',
+    defaultMessage: 'Failed to create payment session. Please try again later.',
+  });
 
   const kafkaEventSender = useSendKafkaEvent();
 
@@ -73,11 +89,31 @@ const CartPage = () => {
   const handleCouponApply = () => {
     //
   };
-  const handleToCheckout = () => {
-    //
+
+  const createPaymentSession = async () => {
+    try {
+      const response = await paymentSessionMutation.mutateAsync({
+        cart,
+        selectedAddressId,
+        coupon,
+      });
+
+      if (!response?.success || !response?.data?.sessionId) {
+        throw new Error(
+          response?.message || 'Failed to create payment session',
+        );
+      }
+
+      router.push(`${Routes.checkout}?sessionId=${response.data.sessionId}`);
+    } catch (error) {
+      errorToast(
+        error,
+        'Failed to create payment session. Please try again later.',
+      );
+    }
   };
 
-  const isLoading = false;
+  const isCreatingSession = paymentSessionMutation.isPending;
 
   return (
     <div className="w-full bg-background">
@@ -259,8 +295,10 @@ const CartPage = () => {
                 <h4 className="mb-2 text-sm">Have a coupon?</h4>
                 <div className="flex">
                   <Input
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
+                    // value={coupon?.code || ''}
+                    // onChange={(e) =>
+                    //   setCoupon((prev) => ({ ...prev, code: e.target.value }))
+                    // }
                     placeholder="Enter coupon code here"
                     className="h-10"
                   />
@@ -332,10 +370,10 @@ const CartPage = () => {
               </div>
 
               <Button
-                isLoading={false}
+                isLoading={isCreatingSession}
                 variant="primary2Dark"
                 className="w-full"
-                onClick={handleToCheckout}
+                onClick={createPaymentSession}
               >
                 Proceed to Checkout
               </Button>

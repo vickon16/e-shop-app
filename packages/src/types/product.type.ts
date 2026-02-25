@@ -1,3 +1,4 @@
+import { TCreatePaymentSessionSchema } from 'src/zod-schemas/order-schema.js';
 import { TImages, TProduct } from './drizzle.type.js';
 
 export type TProductQueryType =
@@ -29,10 +30,5 @@ export type TPaymentSession = {
     sellerId: string;
   }[];
   shippingAddressId?: string | null;
-  coupon?: {
-    code: string;
-    discountPercent: number;
-    discountAmount: number;
-    discountedProductId: string;
-  } | null;
+  coupon?: TCreatePaymentSessionSchema['coupon'];
 };

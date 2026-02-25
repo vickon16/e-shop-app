@@ -11,6 +11,7 @@ import {
   and,
   eq,
   gte,
+  notificationsTable,
   orderItemsTable,
   ordersTable,
   productAnalyticsTable,
@@ -19,14 +20,14 @@ import {
   userAnalyticsActionsTable,
   userAnalyticsTable,
 } from '../../database/index.js';
+import { sendEmail } from '../../mails/send-mail.js';
 
 export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
   try {
     switch (event.type) {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object;
-        const sessionId = paymentIntent.metadata.sessionId;
-        const userId = paymentIntent.metadata.userId;
+        const { sessionId, userId } = paymentIntent.metadata;
 
         if (!sessionId || !userId) {
           throw new BadRequestError('Invalid request');
@@ -43,7 +44,7 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
           throw new BadRequestError('Payment session not found or expired');
         }
 
-        const { cart, shippingAddressId, coupon } = JSON.parse(
+        const { cart, shippingAddressId, sellersData, coupon } = JSON.parse(
           sessionData,
         ) as TPaymentSession;
 
@@ -53,46 +54,59 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
           throw new BadRequestError('User not found');
         }
 
-        // Group the cart items by their shops
-        const shopGrouped = cart.reduce(
+        const now = new Date();
+
+        // Group cart by shop
+        const shopGrouped = cart.reduce<Record<string, typeof cart>>(
           (acc, item) => {
-            if (!acc[item.shopId]) acc[item.shopId] = [];
+            acc[item.shopId] ??= [];
             acc[item.shopId].push(item);
             return acc;
           },
-          {} as Record<string, typeof cart>,
+          {},
         );
 
-        for (const shopId in shopGrouped) {
-          const orderItems = shopGrouped[shopId];
+        let totalOrderAmount = 0;
+        let totalItemsCount = 0;
 
-          let orderTotal = orderItems.reduce((total, item) => {
-            return total + Number(item.salePrice || 0) * (item.quantity || 1);
-          }, 0);
-
-          console.log('First order total', orderTotal);
-
-          // Apply discount if applicable
-          const foundDiscountedItem = orderItems.find(
-            (item) => item.id === coupon?.discountedProductId,
-          );
-
-          if (coupon && coupon.discountedProductId && foundDiscountedItem) {
-            const salePrice = Number(foundDiscountedItem?.salePrice || 0);
-            const quantity = foundDiscountedItem.quantity || 1;
-            const discountPercent = coupon.discountPercent;
-
-            const discount =
-              coupon.discountPercent > 0
-                ? (salePrice * quantity * discountPercent) / 100
-                : coupon.discountAmount;
-
-            orderTotal -= discount;
-            console.log('Second order total', orderTotal, discount);
-          }
-
-          // Create order
+        for (const [shopId, orderItems] of Object.entries(shopGrouped)) {
           await appDb.transaction(async (tx) => {
+            let orderTotal = orderItems.reduce((total, item) => {
+              return total + Number(item.salePrice || 0) * (item.quantity || 1);
+            }, 0);
+
+            let discount = 0;
+
+            console.log('First order total', orderTotal);
+
+            // Apply discount if applicable
+            if (coupon && coupon.discountedProductId) {
+              const discountedItem = orderItems.find(
+                (item) => item.id === coupon?.discountedProductId,
+              );
+
+              if (discountedItem) {
+                const salePrice = Number(discountedItem?.salePrice || 0);
+                const quantity = discountedItem.quantity || 1;
+                const discountPercent = coupon.discountPercent;
+
+                discount =
+                  coupon.discountPercent > 0
+                    ? (salePrice * quantity * discountPercent) / 100
+                    : coupon.discountAmount;
+
+                orderTotal -= discount;
+                console.log('Second order total', orderTotal, discount);
+              }
+            }
+
+            totalOrderAmount += orderTotal;
+            totalItemsCount += orderItems.reduce(
+              (sum, item) => sum + (item.quantity || 0),
+              0,
+            );
+
+            // Create order
             const [newOrder] = await tx
               .insert(ordersTable)
               .values({
@@ -102,28 +116,44 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
                 status: 'paid',
                 shippingAddressId: shippingAddressId || null,
                 couponCode: coupon?.code || null,
-                discountAmount: coupon?.discountAmount || 0,
+                discountAmount: discount,
               })
               .returning();
 
-            if (newOrder) {
-              await tx.insert(orderItemsTable).values(
-                orderItems.map((item) => ({
-                  orderId: newOrder.id,
-                  productId: item.id,
-                  quantity: item.quantity,
-                  price: item.salePrice,
-                  selectedOptions: item.selectedOptions,
-                })),
-              );
-            }
+            if (!newOrder) throw new Error('Order creation failed');
+
+            await tx.insert(orderItemsTable).values(
+              orderItems.map((item) => ({
+                orderId: newOrder.id,
+                productId: item.id,
+                quantity: item.quantity,
+                price: item.salePrice,
+                selectedOptions: item.selectedOptions,
+              })),
+            );
+
+            // Update user analytics
+            const [analytics] = await tx
+              .insert(userAnalyticsTable)
+              .values({
+                userId,
+                lastVisitedAt: now,
+              })
+              .onConflictDoUpdate({
+                target: userAnalyticsTable.userId,
+                set: {
+                  lastVisitedAt: now,
+                  updatedAt: now,
+                },
+              })
+              .returning();
 
             // Update product and analytics
             for (const item of orderItems) {
               const quantity = item.quantity || 1;
               // Decrement the product stock
 
-              await tx
+              const results = await tx
                 .update(productsTable)
                 .set({
                   stock: sql`${productsTable.stock} - ${quantity}`,
@@ -135,7 +165,14 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
                     eq(productsTable.shopId, item.shopId),
                     gte(productsTable.stock, quantity), // ensure enough stock
                   ),
+                )
+                .returning();
+
+              if (results.length === 0) {
+                throw new Error(
+                  `Failed to update stock for product ${item.id}. Not enough stock or product not found.`,
                 );
+              }
 
               // update analytics (for simplicity, just incrementing a sales count here)
               await tx
@@ -144,32 +181,16 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
                   productId: item.id,
                   shopId: item.shopId,
                   purchases: quantity,
-                  lastVisitedAt: new Date(),
+                  lastVisitedAt: now,
                 })
                 .onConflictDoUpdate({
                   target: productAnalyticsTable.productId,
                   set: {
-                    lastVisitedAt: new Date(),
-                    updatedAt: new Date(),
+                    lastVisitedAt: now,
+                    updatedAt: now,
                     purchases: sql`${productAnalyticsTable.purchases} + ${quantity}`,
                   },
                 });
-
-              // Update user analytics
-              const [analytics] = await tx
-                .insert(userAnalyticsTable)
-                .values({
-                  userId,
-                  lastVisitedAt: new Date(),
-                })
-                .onConflictDoUpdate({
-                  target: userAnalyticsTable.userId,
-                  set: {
-                    lastVisitedAt: new Date(),
-                    updatedAt: new Date(),
-                  },
-                })
-                .returning();
 
               if (analytics) {
                 await tx
@@ -179,7 +200,7 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
                     action: 'purchase',
                     productId: item.id,
                     shopId: item.shopId,
-                    timestamp: new Date(),
+                    timestamp: now,
                   })
                   .onConflictDoNothing();
               }
@@ -187,10 +208,56 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
           });
         }
 
-        sendSuccess(res, {}, 'Successfully created product', 201);
+        // Send email once per order (not per shop)
+
+        const sellerNotifications = sellersData.map((seller) => {
+          const firstProduct = shopGrouped[seller.shopId]?.[0];
+
+          return {
+            title: 'New Order Received',
+            message: `You have received a new order for ${firstProduct?.title ?? 'New Item'} and other items. A customer has just purchased items from your shop. Please check your orders to see the details and process the order promptly.`,
+            creatorId: userId,
+            receiverId: seller.sellerId,
+            redirectUrl: `"https://seller.eshop.com/orders/${sessionId}"`,
+          };
+        });
+
+        await Promise.all([
+          // User email
+          sendEmail({
+            to: user.email,
+            subject: 'Your Eshop order confirmation',
+            templateName: 'order-confirmation',
+            data: {
+              name: user.name,
+              cart,
+              totalAmount: totalOrderAmount,
+              totalItems: totalItemsCount,
+              trackingUrl: `https://eshop.com/order/${sessionId}`,
+            },
+          }),
+
+          // Seller notifications
+          appDb.insert(notificationsTable).values(sellerNotifications),
+
+          // Admin notification
+          await appDb.insert(notificationsTable).values({
+            title: 'New Order Placed',
+            message: `A new order has been placed by ${user.name} for ${totalItemsCount} items. Please check the admin panel to see the details and manage the order.`,
+            creatorId: userId,
+            receiverId: 'admin', // replace with actual admin ID or logic to fetch admin users
+            redirectUrl: `"https://admin.eshop.com/orders/${sessionId}"`,
+          }),
+        ]);
+
+        // Clear Redis session
+        await redis.del(sessionKey);
+
         break;
       }
     }
+
+    sendSuccess(res, { received: true }, 'Successfully processed order', 200);
   } catch (error) {
     console.log('Error in orderEventHandler:', error);
     throw error;

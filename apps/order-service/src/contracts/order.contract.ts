@@ -37,22 +37,11 @@ export const createPaymentSessionContract = {
 
 export const verifyPaymentSessionContract = {
   ...baseContract,
-  method: 'post',
+  method: 'get',
   path: '/api/order/verify-payment-session/{sessionId}',
   routePath: '/verify-payment-session/:sessionId',
   request: {
     params: [{ name: 'sessionId', in: 'path', schema: { type: 'string' } }],
   },
-  otherMiddlewares: [isCombinedAuthenticatedMiddleware],
-} as const satisfies RouteContract;
-
-export const createOrderContract = {
-  ...baseContract,
-  method: 'post',
-  path: '/api/order/create-order',
-  routePath: '/create-order',
-  // request: {
-  //   body: createDiscountCodesSchema,
-  // },
   otherMiddlewares: [isCombinedAuthenticatedMiddleware],
 } as const satisfies RouteContract;

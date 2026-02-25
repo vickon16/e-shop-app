@@ -47,7 +47,12 @@ const limiter = rateLimit({
   legacyHeaders: true,
 });
 
-app.use(limiter);
+app.use((req, res, next) => {
+  if (req.originalUrl.startsWith('/api/order/webhook')) {
+    return next();
+  }
+  return limiter(req, res, next);
+});
 
 /** Health / welcome */
 app.get('/api/gateway-health', (_req, res) => {

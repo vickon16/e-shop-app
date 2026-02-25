@@ -7,6 +7,7 @@ import { errorMiddleware } from '@e-shop-app/packages/middlewares';
 import orderRouter from './routes/order.router';
 import swaggerUi from 'swagger-ui-express';
 import { openApiDocument } from './swagger/document';
+import { createOrderController } from './controllers/order.controller';
 
 const app = express();
 
@@ -21,6 +22,13 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   }),
+);
+
+// This is route that stripe will call after payment is completed, so we need to parse the body as raw to verify the signature
+app.post(
+  '/api/order/webhook/stripe',
+  express.raw({ type: 'application/json' }),
+  createOrderController,
 );
 
 app.use(cookieParser());
