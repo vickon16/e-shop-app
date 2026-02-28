@@ -33,6 +33,11 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
           throw new BadRequestError('Invalid request');
         }
 
+        console.log(
+          'Processing payment_intent.succeeded for sessionId:',
+          sessionId,
+        );
+
         const sessionKey = constructPaymentSession(userId, sessionId);
         const sessionData = await redis.get(sessionKey);
 
@@ -68,6 +73,7 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
 
         let totalOrderAmount = 0;
         let totalItemsCount = 0;
+        let orderId: string | null = null;
 
         for (const [shopId, orderItems] of Object.entries(shopGrouped)) {
           await appDb.transaction(async (tx) => {
@@ -77,7 +83,7 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
 
             let discount = 0;
 
-            console.log('First order total', orderTotal);
+            console.log('First order total for shopId', shopId, orderTotal);
 
             // Apply discount if applicable
             if (coupon && coupon.discountedProductId) {
@@ -96,7 +102,12 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
                     : coupon.discountAmount;
 
                 orderTotal -= discount;
-                console.log('Second order total', orderTotal, discount);
+                console.log(
+                  'Second order total for shopId',
+                  shopId,
+                  orderTotal,
+                  discount,
+                );
               }
             }
 
@@ -104,6 +115,13 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
             totalItemsCount += orderItems.reduce(
               (sum, item) => sum + (item.quantity || 0),
               0,
+            );
+
+            console.log(
+              'second order total for shopId',
+              shopId,
+              totalOrderAmount,
+              orderTotal,
             );
 
             // Create order
@@ -121,6 +139,10 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
               .returning();
 
             if (!newOrder) throw new Error('Order creation failed');
+
+            orderId = newOrder.id;
+
+            console.log('Order created with ID:', newOrder.id);
 
             await tx.insert(orderItemsTable).values(
               orderItems.map((item) => ({
@@ -147,6 +169,8 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
                 },
               })
               .returning();
+
+            console.log('User analytics updated with ID:', analytics?.id);
 
             // Update product and analytics
             for (const item of orderItems) {
@@ -210,6 +234,13 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
 
         // Send email once per order (not per shop)
 
+        if (!orderId) {
+          console.log('Order ID is null after processing all shops');
+          throw new Error('Order processing failed');
+        }
+
+        console.log('Preparing notifications for user and sellers');
+
         const sellerNotifications = sellersData.map((seller) => {
           const firstProduct = shopGrouped[seller.shopId]?.[0];
 
@@ -218,7 +249,7 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
             message: `You have received a new order for ${firstProduct?.title ?? 'New Item'} and other items. A customer has just purchased items from your shop. Please check your orders to see the details and process the order promptly.`,
             creatorId: userId,
             receiverId: seller.sellerId,
-            redirectUrl: `"https://seller.eshop.com/orders/${sessionId}"`,
+            redirectUrl: `"https://seller.eshop.com/orders/${orderId}"`,
           };
         });
 
@@ -233,7 +264,7 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
               cart,
               totalAmount: totalOrderAmount,
               totalItems: totalItemsCount,
-              trackingUrl: `https://eshop.com/order/${sessionId}`,
+              trackingUrl: `https://eshop.com/orders/${orderId}`,
             },
           }),
 
@@ -246,9 +277,11 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
             message: `A new order has been placed by ${user.name} for ${totalItemsCount} items. Please check the admin panel to see the details and manage the order.`,
             creatorId: userId,
             receiverId: 'admin', // replace with actual admin ID or logic to fetch admin users
-            redirectUrl: `"https://admin.eshop.com/orders/${sessionId}"`,
+            redirectUrl: `"https://admin.eshop.com/orders/${orderId}"`,
           }),
         ]);
+
+        console.log('Notifications sent successfully');
 
         // Clear Redis session
         await redis.del(sessionKey);

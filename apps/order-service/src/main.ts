@@ -25,6 +25,8 @@ app.use(
 );
 
 // This is route that stripe will call after payment is completed, so we need to parse the body as raw to verify the signature
+// stripe listen --forward-to localhost:4004/api/order/webhook/stripe
+
 app.post(
   '/api/order/webhook/stripe',
   express.raw({ type: 'application/json' }),

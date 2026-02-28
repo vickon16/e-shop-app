@@ -168,8 +168,6 @@ export const loginController = async (
       throw new NotFoundError('B: Invalid email or password.');
     }
 
-    console.log('Got here');
-
     if (accountType === 'seller') {
       res.clearCookie('access_token');
       res.clearCookie('refresh_token');

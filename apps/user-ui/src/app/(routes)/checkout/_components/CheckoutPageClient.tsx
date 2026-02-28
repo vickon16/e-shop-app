@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import { TCreatePaymentSessionSchema } from '@e-shop-app/packages/zod-schemas';
-import { useRouter } from 'next/navigation';
 import { TPaymentSession } from '@e-shop-app/packages/types';
+import { Appearance, loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import { CheckoutForm } from '@/components/common/checkout/CheckoutForm';
 
 type Props = {
   sessionData: TPaymentSession;
+  clientSecret: string;
 };
 
 const stripePromise = loadStripe(
@@ -15,15 +15,13 @@ const stripePromise = loadStripe(
 );
 
 export const CheckoutPageClient = (props: Props) => {
-  const { sessionData } = props;
+  const { sessionData, clientSecret } = props;
 
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [cartItems, setCartItems] = useState<
-    TCreatePaymentSessionSchema['cart']
-  >([]);
-  const [coupon, setCoupon] =
-    useState<TCreatePaymentSessionSchema['coupon']>(null);
-  const router = useRouter();
+  const appearance: Appearance = { theme: 'stripe' };
 
-  return <div>CheckoutPageClient</div>;
+  return (
+    <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
+      <CheckoutForm clientSecret={clientSecret} sessionData={sessionData} />
+    </Elements>
+  );
 };

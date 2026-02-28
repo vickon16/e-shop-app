@@ -56,8 +56,6 @@ const ProfilePage = () => {
     });
   };
 
-  console.log({ currentUser });
-
   return (
     <div className="bg-gray-50 p-6 pb-14">
       <div className="md:max-w-8xl w-full mx-auto">

@@ -36,6 +36,21 @@ export const createPaymentIntentController = async (
     const body = req.body as TCreatePaymentIntentSchema;
     const { amount, sellerStripeAccountId, sessionId } = body;
 
+    console.log('Creating payment intent with data:', {
+      amount,
+      sellerStripeAccountId,
+      sessionId,
+    });
+
+    const account = await appStripe.accounts.retrieve(sellerStripeAccountId);
+
+    if (
+      account.capabilities?.transfers !== 'active' ||
+      account.capabilities?.card_payments !== 'active'
+    ) {
+      throw new Error('Seller account not fully onboarded');
+    }
+
     const customerAmount = Math.round(amount * 100);
     const platformFee = Math.floor(customerAmount * 0.1);
 
@@ -153,13 +168,7 @@ export const createPaymentSessionController = async (
     };
 
     const sessionKey = constructPaymentSession(authUser.userId, sessionId);
-    await redis.setex(
-      sessionKey,
-      15 * 60, // Session expires in 15 minutes
-      JSON.stringify(paymentSessionPayload),
-    );
-
-    console.log({ sellersData, sessionId, totalAmount });
+    await redis.set(sessionKey, JSON.stringify(paymentSessionPayload));
 
     sendSuccess(
       res,
@@ -180,7 +189,6 @@ export const verifyPaymentSessionController = async (
   next: NextFunction,
 ) => {
   try {
-    console.log({ reqParams: req.params, reqUser: req.user });
     const authUser = req.user;
     if (!authUser) {
       throw new AuthError('Unauthorized');
@@ -234,7 +242,7 @@ export const createOrderController = async (
       throw new BadRequestError('Invalid Stripe signature');
     }
 
-    console.log('Received Stripe event:', event);
+    console.log('Received Stripe event:', event.type);
 
     await orderEventHandler(res, event);
   } catch (error) {

@@ -6,7 +6,7 @@ export const notificationsTable = pgTable('notifications', {
   message: text('message').notNull(),
 
   creatorId: uuid('creator_id').notNull(),
-  receiverId: uuid('receiver_id').notNull(),
+  receiverId: text('receiver_id').$type<string | 'admin'>().notNull(),
 
   redirectUrl: text('redirect_url'),
 

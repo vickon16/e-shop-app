@@ -86,7 +86,6 @@ const SignUpPage = () => {
         {activeStep === Steps.CREATE_ACCOUNT && (
           <CreateSellerAccountForm
             onSellerCreated={(data) => {
-              console.log({ data });
               setSellerId(data.id);
               setActiveStep(Steps.SETUP_SHOP);
             }}

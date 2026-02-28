@@ -36,16 +36,16 @@ export const useLocationTracking = () => {
   const [location, setLocation] = useState<TLocationStoredData | null>(null);
 
   useEffect(() => {
-    setLocation(getStoredLocation());
-  }, []);
+    const stored = getStoredLocation();
 
-  useEffect(() => {
-    if (!location?.ip || !location?.timestamp) return;
+    if (stored) {
+      setLocation(stored);
+      return;
+    }
 
     fetch('https://ipapi.co/json')
       .then((res) => res.json())
       .then((data) => {
-        console.log({ data });
         const newLocation: TLocationStoredData = {
           ip: data?.ip || undefined,
           country: data?.country || undefined,
@@ -61,7 +61,7 @@ export const useLocationTracking = () => {
       .catch((error) => {
         console.log('Failed to get location', error);
       });
-  }, [location]);
+  }, []); // ✅ empty dependency
 
   return { location };
 };
