@@ -12,7 +12,10 @@ class Routes {
 
   static dashboard = {
     base: '/dashboard',
-    orders: '/dashboard/orders',
+    orders: {
+      base: '/dashboard/orders',
+      order: (orderId: string) => `/dashboard/orders/${orderId}`,
+    },
     payments: '/dashboard/payments',
     createProduct: '/dashboard/create-product',
     allProducts: '/dashboard/all-products',

@@ -1,0 +1,10 @@
+{
+  "name": "admin-ui",
+  "targets": {
+    "dev": {
+      "options": {
+        "port": 3002
+      }
+    }
+  }
+}

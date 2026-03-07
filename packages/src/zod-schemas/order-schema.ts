@@ -1,5 +1,7 @@
 import { TCart } from 'src/types/product.type.js';
 import { z } from './base-zod.js';
+import { discountTypes, ORDER_STATUSES } from '../constants/other-constants.js';
+import { requiredString } from './base.schemas.js';
 
 export const createPaymentIntentSchema = z.object({
   amount: z.number().min(1).openapi({
@@ -21,7 +23,7 @@ export type TCreatePaymentIntentSchema = z.infer<
 >;
 
 export const createPaymentSessionSchema = z.object({
-  cart: z.array(z.any()),
+  cart: z.array(z.any()).nonempty('Cart cannot be empty'),
   selectedAddressId: z.string().optional().openapi({
     description: 'Selected shipping address id',
     example: '',
@@ -32,8 +34,8 @@ export const createPaymentSessionSchema = z.object({
         description: 'Coupon code if available',
         example: 'SAVE16',
       }),
-      discountPercent: z.number().openapi({
-        description: 'Discount percentage if applicable',
+      discountValue: z.number().openapi({
+        description: 'Discount value if applicable',
         example: 10,
       }),
       discountAmount: z.number().openapi({
@@ -44,12 +46,37 @@ export const createPaymentSessionSchema = z.object({
         description: 'ID of the product eligible for discount',
         example: 'prod_12345',
       }),
+      discountType: z.enum(discountTypes).openapi({
+        description: 'Type of discount',
+        example: 'percentage',
+      }),
     })
     .nullable(),
 });
 
 export type TCreatePaymentSessionSchema = Omit<
   z.infer<typeof createPaymentSessionSchema>,
+  'cart'
+> & {
+  cart: TCart[];
+};
+
+export const updateOrderStatusSchema = z.object({
+  orderStatus: z.enum(ORDER_STATUSES).openapi({
+    description: 'New order status',
+    example: ORDER_STATUSES[0],
+  }),
+});
+
+export type TUpdateOrderStatusSchema = z.infer<typeof updateOrderStatusSchema>;
+
+export const verifyCouponSchema = z.object({
+  couponCode: requiredString('Coupon Code', 3, 20),
+  cart: createPaymentSessionSchema.shape.cart,
+});
+
+export type TVerifyCouponSchema = Omit<
+  z.infer<typeof verifyCouponSchema>,
   'cart'
 > & {
   cart: TCart[];

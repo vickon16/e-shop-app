@@ -2,6 +2,7 @@
 
 ````new Nx service
 nx g @nx/express:app product-service --directory=apps/product-service --e2eTestRunner=none
+nx g @nx/next:app apps/admin-ui
 nx reset cache
 nx build packages
 

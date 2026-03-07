@@ -17,6 +17,7 @@ export type TCart = Pick<TProduct, 'id' | 'title' | 'shopId' | 'salePrice'> & {
     color?: string;
     size?: string;
   };
+  discountCodes?: string[]; // Id of the discount codes
 };
 
 export type TPaymentSession = {

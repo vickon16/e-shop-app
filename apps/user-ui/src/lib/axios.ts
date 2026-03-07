@@ -1,5 +1,7 @@
-import { Routes } from '@/configs/routes';
+import { publicPaths } from '@/configs/routes';
 import axios from 'axios';
+import { runRedirectToLogin } from './utils/redirect';
+import { CustomAxiosRequestConfig } from '@e-shop-app/packages/types';
 
 export const axiosInstance = axios.create({
   baseURL: `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api`,
@@ -11,11 +13,10 @@ let refreshSubscribers: (() => void)[] = [];
 
 // handle logout and prevent infinite loops
 const handleLogout = () => {
-  if (
-    typeof window !== 'undefined' &&
-    window.location.pathname !== Routes.auth.login
-  ) {
-    window.location.href = Routes.auth.login;
+  const currentPath = window.location.pathname;
+
+  if (typeof window !== 'undefined' && !publicPaths.includes(currentPath)) {
+    runRedirectToLogin();
   }
 };
 
@@ -41,14 +42,19 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as CustomAxiosRequestConfig;
 
     const requestPath = '/auth/refresh-token?accountType=user';
 
+    const is401 = error.response?.status === 401;
+    const isRetry = !!originalRequest?._retry;
+    // const isAuthRequired = !!originalRequest?.requireAuth;
+
     if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url.includes(requestPath)
+      is401 &&
+      !isRetry &&
+      !originalRequest.url?.includes(requestPath)
+      // isAuthRequired
     ) {
       // prevent infinite loops
       if (isRefreshing) {

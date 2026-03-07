@@ -1,7 +1,10 @@
 'use client';
 
 import { GET_USER } from '@/actions/base-action-constants';
-import { getUserOptions } from '@/actions/queries/base-queries';
+import {
+  getUserOptions,
+  getUserOrderStatsOptions,
+} from '@/actions/queries/base-queries';
 import { QuickActionCard } from '@/components/common/cards/QuickActionCard';
 import { StatCard } from '@/components/common/cards/StatCard';
 import { Button } from '@/components/ui/button';
@@ -30,6 +33,8 @@ import {
   LuUser,
 } from 'react-icons/lu';
 import { ShippingAddressSection } from './_components/ShippingAddressSection';
+import { OrderTableSection } from './_components/OrderTableSection';
+import { ChangePasswordSection } from './_components/ChangePasswordSection';
 
 const ProfilePage = () => {
   const searchParams = useSearchParams();
@@ -38,7 +43,9 @@ const ProfilePage = () => {
 
   const tab = searchParams.get('tab');
   const userQuery = useQuery(getUserOptions());
+  const statsQuery = useQuery(getUserOrderStatsOptions());
   const currentUser = userQuery?.data;
+  const orderStats = statsQuery?.data;
   const [activeTab, setActiveTab] = useState(tab || 'profile');
 
   useEffect(() => {
@@ -75,9 +82,24 @@ const ProfilePage = () => {
 
         {/* Profile overview grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <StatCard title="Total Orders" count={10} icon={LuClock} />
-          <StatCard title="Processing Orders" count={10} icon={LuTruck} />
-          <StatCard title="Completed Orders" count={10} icon={LuCircleCheck} />
+          <StatCard
+            title="Total Orders"
+            count={orderStats?.totalOrders || 0}
+            icon={LuClock}
+            isLoading={statsQuery.isLoading}
+          />
+          <StatCard
+            title="Processing Orders"
+            count={orderStats?.processingOrders || 0}
+            icon={LuTruck}
+            isLoading={statsQuery.isLoading}
+          />
+          <StatCard
+            title="Completed Orders"
+            count={orderStats?.completedOrders || 0}
+            icon={LuCircleCheck}
+            isLoading={statsQuery.isLoading}
+          />
         </div>
 
         {/* Sidebar and content layout */}
@@ -177,6 +199,12 @@ const ProfilePage = () => {
 
             {activeTab === 'shipping' && currentUser && (
               <ShippingAddressSection />
+            )}
+
+            {activeTab === 'orders' && currentUser && <OrderTableSection />}
+
+            {activeTab === 'changePassword' && currentUser && (
+              <ChangePasswordSection />
             )}
           </div>
 

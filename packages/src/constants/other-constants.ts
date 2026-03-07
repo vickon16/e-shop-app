@@ -1,5 +1,8 @@
 export const YesNo = ['Yes', 'No'] as const;
 
+export const userRoles = ['user', 'admin', 'super-admin'] as const;
+export type TUserRoles = (typeof userRoles)[number];
+
 export const baseColor = '#ffffff';
 export const defaultColors = [
   { name: 'White', value: baseColor },
@@ -42,4 +45,19 @@ export const paymentMethods = [
   { label: 'Cash On Delivery', value: 'cash-on-delivery' },
 ];
 
-export const orderStatus = ['paid', 'pending'] as const;
+export const paymentStatus = ['paid', 'pending'] as const;
+
+export type TOrderStatus =
+  | 'Processing'
+  | 'Packed'
+  | 'Shipped'
+  | 'Out for Delivery'
+  | 'Delivered';
+
+export const ORDER_STATUSES: TOrderStatus[] = [
+  'Processing',
+  'Packed',
+  'Shipped',
+  'Out for Delivery',
+  'Delivered',
+];

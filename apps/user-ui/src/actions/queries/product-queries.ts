@@ -40,7 +40,7 @@ export const getProductOffersOptions = () => {
     queryFn: async () => {
       const response = await axiosInstance.get<
         TBaseServerResponseWithPagination<TProductWithImagesAndShop[]>
-      >(`/product/get-filtered-products?type=event&`);
+      >(`/product/get-filtered-products?type=event`);
 
       if (!response.data.success || !response.data.data) {
         throw new Error(

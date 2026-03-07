@@ -323,6 +323,8 @@ export const generateToken = (
 
   if (userType === 'seller') {
     setCookie(res, 'seller_access_token', accessToken);
+  } else if (userType === 'admin') {
+    setCookie(res, 'admin_access_token', accessToken);
   } else {
     setCookie(res, 'access_token', accessToken);
   }
@@ -333,6 +335,8 @@ export const generateToken = (
 
   if (userType === 'seller') {
     setCookie(res, 'seller_refresh_token', refreshToken);
+  } else if (userType === 'admin') {
+    setCookie(res, 'admin_refresh_token', refreshToken);
   } else {
     setCookie(res, 'refresh_token', refreshToken);
   }

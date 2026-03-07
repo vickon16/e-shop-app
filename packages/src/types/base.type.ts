@@ -11,6 +11,7 @@ import {
 } from '@asteasolutions/zod-to-openapi/dist/types.js';
 import type { Row } from '@tanstack/react-table';
 import { TUserAnalyticsAction } from './drizzle.type.js';
+import { AxiosRequestConfig } from 'axios';
 
 export type TTableMeta = {
   page: number;
@@ -20,6 +21,11 @@ export type TTableMeta = {
   hasPreviousPage: boolean;
   hasNextPage: boolean;
 };
+
+export interface CustomAxiosRequestConfig extends AxiosRequestConfig {
+  requireAuth?: boolean;
+  _retry?: boolean;
+}
 
 export type TPaginatedServerResponse<T> = {
   data: T;
@@ -65,7 +71,7 @@ export interface RouteContract {
   otherMiddlewares?: Array<RequestHandler>;
 }
 
-export type TUserAccountType = 'user' | 'seller' | 'combined';
+export type TUserAccountType = 'user' | 'seller' | 'admin' | 'combined';
 
 export interface JwtPayload {
   userId: string;

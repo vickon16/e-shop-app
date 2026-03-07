@@ -10,7 +10,7 @@ import { useLocationTracking } from '@/hooks/use-location-tracking';
 import { useAppStore } from '@/store';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useState } from 'react';
+import { startTransition, useState, useTransition } from 'react';
 import { LuChevronRight } from 'react-icons/lu';
 
 import {
@@ -39,8 +39,12 @@ import { paymentMethods } from '@e-shop-app/packages/constants';
 import Image from 'next/image';
 import { BiTrash } from 'react-icons/bi';
 import { errorToast } from '@/lib/utils';
-import { TCreatePaymentSessionSchema } from '@e-shop-app/packages/zod-schemas';
+import {
+  TCreatePaymentSessionSchema,
+  TVerifyCouponSchema,
+} from '@e-shop-app/packages/zod-schemas';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 const tableHeadings = ['Product', 'Quantity', 'Price', 'Action'];
 
@@ -51,15 +55,15 @@ const CartPage = () => {
   const userQuery = useQuery(getUserOptions());
   const currentUser = userQuery?.data;
 
-  const [discountedProductId, setDiscountedProductId] = useState('');
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const [discountAmount, setDiscountAmount] = useState(0);
-
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
   const [coupon, setCoupon] =
     useState<TCreatePaymentSessionSchema['coupon']>(null);
+  const [couponCode, setCouponCode] = useState('');
   const router = useRouter();
+  const [error, setError] = useState('');
+  const [isPendingCreatePayment, startCreatePaymentTransition] =
+    useTransition();
 
   const userAddressQuery = useQuery(getUserAddressOptions());
   const userAddresses = userAddressQuery?.data || [];
@@ -76,6 +80,14 @@ const CartPage = () => {
     defaultMessage: 'Failed to create payment session. Please try again later.',
   });
 
+  const couponMutation = useBaseMutation<
+    TVerifyCouponSchema,
+    TCreatePaymentSessionSchema['coupon']
+  >({
+    endpoint: '/order/verify-coupon',
+    defaultMessage: 'Failed to apply coupon. Please try again later.',
+  });
+
   const kafkaEventSender = useSendKafkaEvent();
 
   const store = useAppStore((state) => state);
@@ -86,34 +98,70 @@ const CartPage = () => {
     return total + itemTotal;
   }, 0);
 
-  const handleCouponApply = () => {
-    //
-  };
-
-  const createPaymentSession = async () => {
+  const handleCouponApply = async () => {
+    setError('');
     try {
-      const response = await paymentSessionMutation.mutateAsync({
+      if (!couponCode?.trim()) {
+        setError('Please enter a coupon code');
+        toast.error('Please enter a coupon code');
+        return;
+      }
+
+      const response = await couponMutation.mutateAsync({
+        couponCode,
         cart,
-        selectedAddressId,
-        coupon,
       });
 
-      if (!response?.success || !response?.data?.sessionId) {
+      if (!response?.success || !response?.data) {
         throw new Error(
-          response?.message || 'Failed to create payment session',
+          response?.message ||
+            'Failed to apply coupon. Please try again later.',
         );
       }
 
-      router.push(`${Routes.checkout}?sessionId=${response.data.sessionId}`);
-    } catch (error) {
-      errorToast(
-        error,
-        'Failed to create payment session. Please try again later.',
+      setCouponCode('');
+      setCoupon(response.data);
+    } catch (error: any) {
+      setError(
+        error?.response?.data?.message ||
+          'Failed to apply coupon. Please try again later.',
       );
+      errorToast(error, 'Failed to apply coupon. Please try again later.');
     }
   };
 
-  const isCreatingSession = paymentSessionMutation.isPending;
+  const createPaymentSession = async () => {
+    if (!defaultAddress) {
+      toast.error('You need a delivery address to make a payment');
+      return;
+    }
+
+    startCreatePaymentTransition(async () => {
+      try {
+        const response = await paymentSessionMutation.mutateAsync({
+          cart,
+          selectedAddressId: defaultAddress,
+          coupon,
+        });
+
+        if (!response?.success || !response?.data?.sessionId) {
+          throw new Error(
+            response?.message || 'Failed to create payment session',
+          );
+        }
+
+        router.push(`${Routes.checkout}?sessionId=${response.data.sessionId}`);
+      } catch (error) {
+        errorToast(
+          error,
+          'Failed to create payment session. Please try again later.',
+        );
+      }
+    });
+  };
+
+  const isCreatingSession =
+    isPendingCreatePayment || paymentSessionMutation.isPending;
 
   return (
     <div className="w-full bg-background">
@@ -219,7 +267,7 @@ const CartPage = () => {
                     </TableCell>
 
                     <TableCell>
-                      {item.id === discountedProductId ? (
+                      {!!coupon && item.id === coupon?.discountedProductId ? (
                         <div className="flex flex-col items-center">
                           <span className="line-through text-gray-500 text-sm">
                             ${item.salePrice}
@@ -228,10 +276,10 @@ const CartPage = () => {
                             $
                             {(
                               (Number(item.salePrice) *
-                                (100 - discountPercent)) /
+                                (100 - coupon?.discountValue)) /
                               100
                             ).toFixed(2)}{' '}
-                            ({discountPercent}% off)
+                            ({coupon?.discountValue}% off)
                           </span>
                         </div>
                       ) : (
@@ -271,13 +319,13 @@ const CartPage = () => {
             </Table>
             {/* Other side */}
             <div className="p-6 shadow-md w-full lg:w-[30%] bg-[#f9f9f9]">
-              {discountAmount > 0 && (
+              {!!coupon && coupon?.discountAmount > 0 && (
                 <div className="flex items-center justify-between text-[#010f1c] font-medium pb-1">
                   <span className="font-poppins">
-                    Discount (${discountPercent})
+                    Discount ({coupon?.discountValue}%)
                   </span>
                   <span className="text-green-600">
-                    - ${discountAmount.toFixed(2)}
+                    - ${coupon?.discountAmount.toFixed(2)}
                   </span>
                 </div>
               )}
@@ -285,7 +333,7 @@ const CartPage = () => {
               <div className="flex justify-between items-center text-[#010f1c] font-medium pb-3">
                 <span>Subtotal</span>
                 <span className="font-semibold">
-                  ${(cartTotal - discountAmount).toFixed(2)}
+                  ${(cartTotal - (coupon?.discountAmount || 0)).toFixed(2)}
                 </span>
               </div>
 
@@ -295,15 +343,15 @@ const CartPage = () => {
                 <h4 className="mb-2 text-sm">Have a coupon?</h4>
                 <div className="flex">
                   <Input
-                    // value={coupon?.code || ''}
-                    // onChange={(e) =>
-                    //   setCoupon((prev) => ({ ...prev, code: e.target.value }))
-                    // }
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
                     placeholder="Enter coupon code here"
                     className="h-10"
                   />
                   <Button onClick={handleCouponApply}>Apply</Button>
                 </div>
+
+                {error && <p className="text-red-500 text-xs pt-2">{error}</p>}
               </div>
 
               <hr className="my-2 text-slate-200" />
@@ -365,7 +413,7 @@ const CartPage = () => {
               <div className="flex justify-between items-center text-[#010f1c] font-medium pb-3">
                 <span>Total</span>
                 <span className="font-semibold">
-                  ${(cartTotal - discountAmount).toFixed(2)}
+                  ${(cartTotal - (coupon?.discountAmount || 0)).toFixed(2)}
                 </span>
               </div>
 

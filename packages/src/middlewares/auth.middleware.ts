@@ -15,8 +15,13 @@ const baseAuthMiddleware = (
       token = req.cookies['seller_access_token'];
     } else if (userType === 'user') {
       token = req.cookies['access_token'];
+    } else if (userType === 'admin') {
+      token = req.cookies['admin_access_token'];
     } else {
-      token = req.cookies['seller_access_token'] || req.cookies['access_token'];
+      token =
+        req.cookies['admin_access_token'] ||
+        req.cookies['seller_access_token'] ||
+        req.cookies['access_token'];
     }
 
     if (!token) {
@@ -82,6 +87,19 @@ export const isSellerAuthenticatedMiddleware = (
     baseAuthMiddleware(req, next, 'seller');
   } catch (error) {
     console.log('Error in seller isAuthenticated middleware:', error);
+    return next(error);
+  }
+};
+
+export const isAdminAuthenticatedMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    baseAuthMiddleware(req, next, 'admin');
+  } catch (error) {
+    console.log('Error in admin isAuthenticated middleware:', error);
     return next(error);
   }
 };

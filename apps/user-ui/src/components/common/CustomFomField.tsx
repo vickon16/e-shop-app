@@ -57,7 +57,8 @@ type DefaultInputProps = CommonProps & {
     | 'color-selector'
     | 'rich-text-editor'
     | 'size-selector'
-    | 'discount-code-selector';
+    | 'discount-code-selector'
+    | 'password';
 };
 
 type SelectInputProps = CommonProps & {
@@ -140,7 +141,8 @@ export const BaseFormControls = <T extends FieldValues, E extends Path<T>>(
 
       {(props.type === 'email' ||
         props.type === 'number' ||
-        props.type === 'phone') && (
+        props.type === 'phone' ||
+        props.type === 'password') && (
         <FormControl>
           <Input
             {...field}

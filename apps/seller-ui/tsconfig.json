@@ -51,6 +51,9 @@
   ],
   "references": [
     {
+      "path": "../user-ui"
+    },
+    {
       "path": "../../packages"
     }
   ]

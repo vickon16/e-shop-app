@@ -43,3 +43,22 @@ export const useDeleteRestoreProductMutation = () => {
     },
   });
 };
+
+export const useDeleteRestoreShopMutation = () => {
+  return useMutation({
+    mutationFn: async (type: 'delete' | 'restore') => {
+      const response = await axiosInstance.put<TBaseServerResponse<any>>(
+        `/product/${type}-shop`,
+      );
+
+      if (!response.data.success) {
+        throw new Error(
+          response.data.message ||
+            `An error occurred while ${type === 'delete' ? 'deleting' : 'restoring'} your shop`,
+        );
+      }
+
+      return response.data;
+    },
+  });
+};

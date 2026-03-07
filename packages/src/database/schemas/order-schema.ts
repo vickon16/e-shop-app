@@ -10,7 +10,10 @@ import {
 } from 'drizzle-orm/pg-core';
 import { shopsTable } from './shop-schema.js';
 import { usersTable } from './user-schema.js';
-import { orderStatus } from '../../constants/other-constants.js';
+import {
+  paymentStatus,
+  TOrderStatus,
+} from '../../constants/other-constants.js';
 import { addressTable } from './address-schema.js';
 import { productsTable } from './product-schema.js';
 import { TCart } from '../../types/product.type.js';
@@ -36,7 +39,10 @@ export const ordersTable = pgTable(
       .notNull()
       .default(0),
 
-    status: text('status').$type<(typeof orderStatus)[number]>().notNull(),
+    paymentStatus: text('payment_status')
+      .$type<(typeof paymentStatus)[number]>()
+      .notNull(),
+    orderStatus: text('order_status').$type<TOrderStatus>().notNull(),
     shippingAddressId: uuid('shipping_address_id').references(
       () => addressTable.id,
       { onDelete: 'cascade' },
@@ -57,7 +63,7 @@ export const ordersTable = pgTable(
   (table) => [index('orders_shop_id_idx').on(table.shopId)],
 );
 
-export const ordersRelations = relations(ordersTable, ({ one }) => ({
+export const ordersRelations = relations(ordersTable, ({ one, many }) => ({
   shop: one(shopsTable, {
     fields: [ordersTable.shopId],
     references: [shopsTable.id],
@@ -70,6 +76,8 @@ export const ordersRelations = relations(ordersTable, ({ one }) => ({
     fields: [ordersTable.shippingAddressId],
     references: [addressTable.id],
   }),
+
+  orderItems: many(orderItemsTable),
 }));
 
 export const orderItemsTable = pgTable('order-items', {

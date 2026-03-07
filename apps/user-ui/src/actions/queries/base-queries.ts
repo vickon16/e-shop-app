@@ -3,6 +3,7 @@ import {
   GET_CATEGORIES,
   GET_USER,
   GET_USER_ADDRESS,
+  GET_USER_ORDER_STATS,
 } from '../base-action-constants';
 import { axiosInstance } from '@/lib/axios';
 import {
@@ -69,5 +70,29 @@ export const getUserAddressOptions = () => {
       return response.data.data;
     },
     staleTime: 1000 * 60 * 30, // 30 minutes
+  });
+};
+
+export const getUserOrderStatsOptions = () => {
+  return queryOptions({
+    queryKey: [GET_USER_ORDER_STATS],
+    queryFn: async () => {
+      const response = await axiosInstance.get<
+        TBaseServerResponse<{
+          totalOrders: number;
+          processingOrders: number;
+          completedOrders: number;
+        }>
+      >(`/order/user-order-stats`);
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error(
+          response.data.message || 'Failed to fetch user order stats',
+        );
+      }
+
+      return response.data.data;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

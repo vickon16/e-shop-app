@@ -88,11 +88,11 @@ export const SidebarWrapper = () => {
                 title="Orders"
                 icon={
                   <LuListOrdered
-                    className={getIconClass(Routes.dashboard.orders)}
+                    className={getIconClass(Routes.dashboard.orders.base)}
                   />
                 }
-                isActive={activeSidebar === Routes.dashboard.orders}
-                href={Routes.dashboard.orders}
+                isActive={activeSidebar === Routes.dashboard.orders.base}
+                href={Routes.dashboard.orders.base}
               />
               <SidebarItem
                 title="Payments"

@@ -1,5 +1,6 @@
 import { multerUpload } from '@e-shop-app/packages/libs/multer';
 import {
+  isCombinedAuthenticatedMiddleware,
   isSellerAuthenticatedMiddleware,
   isUserAuthenticatedMiddleware,
 } from '@e-shop-app/packages/middlewares';
@@ -122,9 +123,17 @@ export const getAllProductsContract = {
           default: 'latest',
         },
       },
+      {
+        name: 'isAdmin',
+        in: 'query',
+        schema: {
+          type: 'boolean',
+          default: 'false',
+        },
+      },
     ],
   },
-  otherMiddlewares: [isUserAuthenticatedMiddleware],
+  otherMiddlewares: [isCombinedAuthenticatedMiddleware],
 } as const satisfies RouteContract;
 
 export const getFilteredProductsContract = {
@@ -279,5 +288,21 @@ export const restoreProductContract = {
       { name: 'id', in: 'path', schema: { type: 'string', format: 'uuid' } },
     ],
   },
+  otherMiddlewares: [isSellerAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const deleteShopContract = {
+  ...baseContract,
+  method: 'put',
+  path: '/api/product/delete-shop',
+  routePath: '/delete-shop',
+  otherMiddlewares: [isSellerAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const restoreShopContract = {
+  ...baseContract,
+  method: 'put',
+  path: '/api/product/restore-shop',
+  routePath: '/restore-shop',
   otherMiddlewares: [isSellerAuthenticatedMiddleware],
 } as const satisfies RouteContract;

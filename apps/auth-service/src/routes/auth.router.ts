@@ -18,6 +18,7 @@ import {
   createUserAddressController,
   deleteUserAddressController,
   getUserAddressesController,
+  changePasswordController,
 } from '../controllers/auth.controller';
 import { registerRoute } from '@e-shop-app/packages/libs/swagger';
 import {
@@ -39,6 +40,7 @@ import {
   verifyOtpContract,
   verifySellerContract,
   verifyUserContract,
+  changePasswordContract,
 } from '../contracts/auth.contract';
 
 const authRouter = express.Router();
@@ -109,6 +111,9 @@ registerRoute(
   createStripeConnectLinkContract,
   createStripeConnectLinkController,
 );
+
+// change password
+registerRoute(authRouter, changePasswordContract, changePasswordController);
 
 // logout user
 registerRoute(authRouter, logoutContract, logoutController);

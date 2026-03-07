@@ -12,12 +12,23 @@ import { appStripe, orderEventHandler } from '@e-shop-app/packages/libs/stripe';
 import { sendSuccess } from '@e-shop-app/packages/utils';
 import { NextFunction, Request, Response } from 'express';
 
-import { appDb, inArray, shopsTable } from '@e-shop-app/packages/database';
+import {
+  appDb,
+  desc,
+  discountCodesTable,
+  eq,
+  inArray,
+  orderItemsTable,
+  ordersTable,
+  shopsTable,
+} from '@e-shop-app/packages/database';
 import { env } from '@e-shop-app/packages/env';
 import { TPaymentSession } from '@e-shop-app/packages/types';
 import {
   TCreatePaymentIntentSchema,
   TCreatePaymentSessionSchema,
+  TUpdateOrderStatusSchema,
+  TVerifyCouponSchema,
 } from '@e-shop-app/packages/zod-schemas';
 import Stripe from 'stripe';
 
@@ -99,37 +110,6 @@ export const createPaymentSessionController = async (
 
     if (!cart || cart.length === 0) {
       throw new BadRequestError('Cart cannot be empty');
-    }
-
-    const normalizeCart = JSON.stringify(
-      cart.sort((a, b) => a.id.localeCompare(b.id)), // Sort by id to ensure consistent order
-    );
-
-    // is the cart already available in redis
-
-    const keys = await redis.keys(
-      `${PAYMENT_SESSION_PREFIX}:${authUser.userId}:*`,
-    );
-
-    for (const key of keys) {
-      const sessionData = await redis.get(key);
-      if (sessionData) {
-        const parsedSession = JSON.parse(sessionData) as TPaymentSession;
-        const existingCart = JSON.stringify(
-          parsedSession.cart.sort((a: any, b: any) => a.id.localeCompare(b.id)),
-        );
-
-        if (existingCart === normalizeCart) {
-          // If the cart matches, return the existing session ID
-          return sendSuccess(
-            res,
-            { sessionId: parsedSession.sessionId },
-            'Existing payment session found',
-          );
-        } else {
-          await redis.del(key); // Delete the existing session if the cart doesn't match
-        }
-      }
     }
 
     // Fetch sellers and stripe account
@@ -247,6 +227,348 @@ export const createOrderController = async (
     await orderEventHandler(res, event);
   } catch (error) {
     console.log('Error in createOrderController:', error);
+    return next(error);
+  }
+};
+
+// get user orders
+export const getUserOrdersController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const orders = await appDb.query.ordersTable.findMany({
+      where: eq(ordersTable.userId, authUser.userId),
+      with: {
+        orderItems: {
+          ...orderItemsTable,
+          with: {
+            product: {
+              columns: { id: true, title: true },
+              with: { images: true },
+            },
+          },
+        },
+        shop: true,
+      },
+      orderBy: desc(ordersTable.createdAt),
+    });
+
+    sendSuccess(res, orders, 'Successfully fetched user orders');
+  } catch (error) {
+    console.log('Error in getUserOrdersController:', error);
+    return next(error);
+  }
+};
+
+// get sellers orders
+export const getSellerOrdersController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const sellerShop = await appDb.query.shopsTable.findFirst({
+      where: eq(shopsTable.sellerId, authUser.userId),
+    });
+
+    if (!sellerShop) {
+      throw new NotFoundError('Seller shop not found');
+    }
+
+    // fetch orders for the seller shop
+
+    const orders = await appDb.query.ordersTable.findMany({
+      where: eq(ordersTable.shopId, sellerShop.id),
+      with: {
+        orderItems: true,
+        user: {
+          columns: { id: true, name: true, email: true },
+          with: { avatar: true },
+        },
+        shop: true,
+      },
+      orderBy: desc(ordersTable.createdAt),
+    });
+
+    sendSuccess(res, orders, 'Successfully fetched seller orders');
+  } catch (error) {
+    console.log('Error in getSellerOrdersController:', error);
+    return next(error);
+  }
+};
+
+export const getAdminOrdersController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const orders = await appDb.query.ordersTable.findMany({
+      with: {
+        orderItems: true,
+        user: {
+          columns: { id: true, name: true, email: true },
+          with: { avatar: true },
+        },
+        shop: true,
+      },
+      orderBy: desc(ordersTable.createdAt),
+    });
+
+    sendSuccess(res, orders, 'Successfully fetched orders');
+  } catch (error) {
+    console.log('Error in getAdminOrdersController:', error);
+    return next(error);
+  }
+};
+
+// get order details
+export const getOrderDetailsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const orderId = req.params?.orderId;
+    if (!orderId) {
+      throw new BadRequestError('Order ID is required');
+    }
+
+    const order = await appDb.query.ordersTable.findFirst({
+      where: eq(ordersTable.id, orderId),
+      with: {
+        orderItems: {
+          ...orderItemsTable,
+          with: {
+            product: {
+              columns: { id: true, title: true },
+              with: { images: true },
+            },
+          },
+        },
+        user: {
+          columns: { id: true, name: true, email: true },
+          with: { avatar: true },
+        },
+        shop: true,
+        shippingAddress: true,
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundError('Order not found');
+    }
+
+    let coupon = null;
+
+    if (order?.couponCode) {
+      coupon = await appDb.query.discountCodesTable.findFirst({
+        where: eq(discountCodesTable.discountCode, order.couponCode),
+      });
+    }
+
+    sendSuccess(res, { order, coupon }, 'Successfully fetched order details');
+  } catch (error) {
+    console.log('Error in getOrderDetailsController:', error);
+    return next(error);
+  }
+};
+
+// update order status
+export const updateOrderStatusController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const orderId = req.params?.orderId;
+    if (!orderId) {
+      throw new BadRequestError('Order ID is required');
+    }
+
+    const { orderStatus } = req.body as TUpdateOrderStatusSchema;
+    if (!orderStatus) {
+      throw new BadRequestError('Order status is required');
+    }
+
+    // Verify ordering shop belongs to the seller
+    const sellerShop = await appDb.query.shopsTable.findFirst({
+      where: eq(shopsTable.sellerId, authUser.userId),
+    });
+
+    if (!sellerShop) {
+      throw new NotFoundError('Seller shop not found');
+    }
+
+    const order = await appDb.query.ordersTable.findFirst({
+      where: eq(ordersTable.id, orderId),
+    });
+
+    if (!order) {
+      throw new NotFoundError('Order not found');
+    }
+
+    if (order.shopId !== sellerShop.id) {
+      throw new AuthError('Unauthorized to update this order');
+    }
+
+    await appDb
+      .update(ordersTable)
+      .set({ orderStatus })
+      .where(eq(ordersTable.id, orderId));
+
+    sendSuccess(res, null, 'Successfully updated order status');
+  } catch (error) {
+    console.log('Error in updateOrderStatusController:', error);
+    return next(error);
+  }
+};
+
+// verify coupon
+export const verifyCouponController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const { couponCode, cart } = req.body as TVerifyCouponSchema;
+
+    if (!cart || cart.length === 0) {
+      throw new BadRequestError('Cart cannot be empty');
+    }
+
+    // Get unique seller IDs from the cart
+    const uniqueShopIds = Array.from(new Set(cart.map((item) => item.shopId)));
+    const shops = await appDb.query.shopsTable.findMany({
+      where: inArray(shopsTable.id, uniqueShopIds),
+      columns: { id: true, sellerId: true },
+    });
+    const sellerIds = shops.map((shop) => shop.sellerId);
+
+    // Find the discount code that belongs to one of the sellers in the cart
+    const discountCode = await appDb.query.discountCodesTable.findFirst({
+      where: (table, { and, eq, inArray }) =>
+        and(
+          eq(table.discountCode, couponCode),
+          inArray(table.sellerId, sellerIds),
+          eq(table.isActive, true),
+        ),
+    });
+
+    if (!discountCode) {
+      throw new NotFoundError('Invalid coupon code for items in your cart');
+    }
+
+    // find matching product that includes this discount code
+    const matchingProduct = cart.find((item) =>
+      item?.discountCodes?.some((d) => d === discountCode.id),
+    );
+
+    if (!matchingProduct) {
+      throw new NotFoundError(
+        'This coupon code is not applicable to any product in your cart',
+      );
+    }
+
+    let discountAmount = 0;
+    const price =
+      Number(matchingProduct.salePrice || 0) *
+      Number(matchingProduct.quantity || 1);
+
+    if (discountCode.discountType === 'percentage') {
+      discountAmount = price * (Number(discountCode.discountValue) / 100);
+    } else {
+      discountAmount = Number(discountCode.discountValue);
+    }
+
+    // Make sure the discount amount does not exceed the price
+    discountAmount = Math.min(discountAmount, price);
+
+    sendSuccess(
+      res,
+      {
+        code: discountCode.discountCode,
+        discountValue: Number(discountCode.discountValue),
+        discountAmount,
+        discountedProductId: matchingProduct.id,
+        discountType: discountCode.discountType,
+      } satisfies TCreatePaymentSessionSchema['coupon'],
+      'Coupon verified successfully',
+    );
+  } catch (error) {
+    console.log('Error in verifyCouponController:', error);
+    return next(error);
+  }
+};
+
+// get user order stats
+export const getUserOrderStatsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const orders = await appDb.query.ordersTable.findMany({
+      where: eq(ordersTable.userId, authUser.userId),
+      columns: { orderStatus: true },
+    });
+
+    const totalOrders = orders.length;
+    const processingOrders = orders.filter(
+      (order) => order.orderStatus === 'Processing',
+    ).length;
+    const completedOrders = orders.filter(
+      (order) => order.orderStatus === 'Delivered',
+    ).length;
+
+    sendSuccess(
+      res,
+      {
+        totalOrders,
+        processingOrders,
+        completedOrders,
+      },
+      'Successfully fetched user order stats',
+    );
+  } catch (error) {
+    console.log('Error in getUserOrderStatsController:', error);
     return next(error);
   }
 };

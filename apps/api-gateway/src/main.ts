@@ -10,12 +10,14 @@ import { proxyHelper } from './utils/proxy.helper';
 
 const frontendUserUrl = env.NEXT_PUBLIC_USER_APP_URL;
 const frontendSellerUrl = env.NEXT_PUBLIC_SELLER_APP_URL;
+const frontendAdminUrl = env.NEXT_PUBLIC_ADMIN_APP_URL;
 const host = env.BASE_HOST;
 const gatewayPort = env.GATEWAY_PORT;
 const authServiceUrl = env.AUTH_SERVICE_URL;
 const productServiceUrl = env.PRODUCT_SERVICE_URL;
 const kafkaServiceUrl = env.KAFKA_SERVICE_URL;
 const orderServiceUrl = env.ORDER_SERVICE_URL;
+const adminServiceUrl = env.ADMIN_SERVICE_URL;
 
 const app = express();
 
@@ -25,7 +27,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: [frontendUserUrl, frontendSellerUrl],
+    origin: [frontendUserUrl, frontendSellerUrl, frontendAdminUrl],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   }),
@@ -68,6 +70,7 @@ app.use('/api/auth', proxyHelper(authServiceUrl, 'auth'));
 app.use('/api/product', proxyHelper(productServiceUrl, 'product'));
 app.use('/api/kafka', proxyHelper(kafkaServiceUrl, 'kafka'));
 app.use('/api/order', proxyHelper(orderServiceUrl, 'order'));
+app.use('/api/admin', proxyHelper(adminServiceUrl, 'admin'));
 
 // Uncomment this if the gateway have its own routes
 // app.use(express.json({ limit: '100mb' }));

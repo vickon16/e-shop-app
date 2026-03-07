@@ -16,11 +16,16 @@ class Routes {
   static product = '/product';
   static shop = '/shop';
   static offer = '/offer';
-  static becomeSeller = '/become-seller';
   static inbox = '/inbox';
   static checkout = '/checkout';
 }
 
 export type TRoutesKeys = keyof typeof Routes;
+
+export const publicPaths = [
+  Routes.auth.login,
+  Routes.auth.signup,
+  Routes.auth.forgotPassword,
+];
 
 export { Routes };

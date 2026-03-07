@@ -6,6 +6,7 @@ import {
   deleteDiscountCodeContract,
   deleteProductContract,
   deleteProductImageContract,
+  deleteShopContract,
   getAllProductsContract,
   getCategoriesContract,
   getDiscountCodesContract,
@@ -17,6 +18,7 @@ import {
   getShopProductContract,
   getTopShopsContract,
   restoreProductContract,
+  restoreShopContract,
   uploadProductImageContract,
 } from '../contracts/product.contract';
 import {
@@ -25,6 +27,7 @@ import {
   deleteDiscountCodeController,
   deleteProductController,
   deleteProductImageController,
+  deleteShopController,
   getAllProductsController,
   getCategoriesController,
   getDiscountCodesController,
@@ -36,6 +39,7 @@ import {
   getShopProductController,
   getTopShopsController,
   restoreProductController,
+  restoreShopController,
   uploadProductImageController,
 } from '../controllers/product.controller';
 
@@ -89,6 +93,12 @@ registerRoute(productRouter, deleteProductContract, deleteProductController);
 
 // Restore product
 registerRoute(productRouter, restoreProductContract, restoreProductController);
+
+// Delete shop
+registerRoute(productRouter, deleteShopContract, deleteShopController);
+
+// Restore shop
+registerRoute(productRouter, restoreShopContract, restoreShopController);
 
 // Get product categories
 registerRoute(productRouter, getCategoriesContract, getCategoriesController);

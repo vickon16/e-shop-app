@@ -193,3 +193,20 @@ export const createStripeConnectLinkSchema = z
 export type TCreateStripeConnectLinkSchema = z.infer<
   typeof createStripeConnectLinkSchema
 >;
+
+export const changePasswordSchema = z
+  .object({
+    oldPassword: passwordSchema,
+    newPassword: passwordSchema,
+    confirmPassword: passwordSchema,
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  })
+  .openapi({
+    title: 'ChangePasswordSchema',
+    description: 'Schema for changing the password of a logged-in user',
+  });
+
+export type TChangePasswordSchema = z.infer<typeof changePasswordSchema>;

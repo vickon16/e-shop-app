@@ -16,6 +16,7 @@ import {
 } from '@e-shop-app/packages/error-handler';
 import {
   JwtPayload,
+  TSellerWithPassword,
   TUserAccountType,
   TUserWithPassword,
 } from '@e-shop-app/packages/types';
@@ -26,6 +27,7 @@ import {
   verifyPassword,
 } from '@e-shop-app/packages/utils';
 import {
+  TChangePasswordSchema,
   TCreateShopSchema,
   TCreateStripeConnectLinkSchema,
   TCreateUserSchema,
@@ -131,23 +133,17 @@ export const loginController = async (
   next: NextFunction,
 ) => {
   try {
-    const accountType: TUserAccountType =
-      req.query['accountType'] === 'seller' ? 'seller' : 'user';
+    const accountType =
+      (req.query['accountType'] as TUserAccountType) ?? 'user';
 
     const body = req.body as TLoginSchema;
     const { email, password } = body;
 
-    let existingUser:
-      | Pick<
-          TUserWithPassword,
-          'id' | 'name' | 'email' | 'password' | 'emailVerified'
-        >
-      | undefined;
+    let existingUser: TUserWithPassword | TSellerWithPassword | undefined;
 
     if (accountType === 'seller') {
       existingUser = await getSellerBy('email', email, true);
     } else {
-      console.log('Getting user by email');
       existingUser = await getUserBy('email', email, true);
     }
 
@@ -159,6 +155,13 @@ export const loginController = async (
       throw new ForbiddenError('Please verify your email before logging in.');
     }
 
+    if (accountType === 'admin') {
+      const user = existingUser as TUserWithPassword;
+      if (user.role !== 'admin') {
+        throw new ForbiddenError('Admin login failed. not an admin');
+      }
+    }
+
     const isValidPassword = await verifyPassword(
       existingUser?.password || '',
       password,
@@ -168,13 +171,9 @@ export const loginController = async (
       throw new NotFoundError('B: Invalid email or password.');
     }
 
-    if (accountType === 'seller') {
-      res.clearCookie('access_token');
-      res.clearCookie('refresh_token');
-    } else {
-      res.clearCookie('seller_access_token');
-      res.clearCookie('seller_refresh_token');
-    }
+    console.log('Got here');
+
+    clearTokens(res);
 
     const payload: JwtPayload = {
       userId: existingUser.id,
@@ -310,12 +309,16 @@ export const refreshTokenController = async (
   next: NextFunction,
 ) => {
   try {
-    const accountType: TUserAccountType =
-      req.query['accountType'] === 'seller' ? 'seller' : 'user';
+    const accountType =
+      (req.query['accountType'] as TUserAccountType) ?? 'user';
 
     const refreshToken =
       req.cookies[
-        accountType === 'seller' ? 'seller_refresh_token' : 'refresh_token'
+        accountType === 'seller'
+          ? 'seller_refresh_token'
+          : accountType === 'admin'
+            ? 'admin_refresh_token'
+            : 'refresh_token'
       ];
 
     if (!refreshToken) {
@@ -592,17 +595,90 @@ export const logoutController = async (
       throw new AuthError('Unauthorized');
     }
 
-    if (authUser.role === 'user') {
-      res.clearCookie('access_token');
-      res.clearCookie('refresh_token');
-    } else {
-      res.clearCookie('seller_access_token');
-      res.clearCookie('seller_refresh_token');
-    }
+    clearTokens(res);
 
     sendSuccess(res, null, 'Logged out successfully');
   } catch (error) {
     console.log('Error in logoutController:', error);
     return next(error);
   }
+};
+
+export const changePasswordController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const { oldPassword, newPassword } = req.body as TChangePasswordSchema;
+
+    const accountType = authUser.role;
+    let existingUser: TUserWithPassword | TSellerWithPassword | undefined;
+
+    if (accountType === 'seller') {
+      existingUser = await getSellerBy('id', authUser.userId, true);
+    } else {
+      existingUser = await getUserBy('id', authUser.userId, true);
+    }
+
+    if (!existingUser || !existingUser.password) {
+      throw new AuthError('User not found or password not set.');
+    }
+
+    const isValidPassword = await verifyPassword(
+      existingUser.password,
+      oldPassword,
+    );
+
+    if (!isValidPassword) {
+      throw new ValidationError('Invalid old password.');
+    }
+
+    const isSamePassword = await verifyPassword(
+      existingUser.password,
+      newPassword,
+    );
+
+    if (isSamePassword) {
+      throw new ValidationError(
+        'New password must be different from the old password.',
+      );
+    }
+
+    const hashedPassword = await hashPassword(newPassword);
+
+    if (accountType === 'seller') {
+      await appDb
+        .update(sellersTable)
+        .set({ password: hashedPassword })
+        .where(eq(sellersTable.id, authUser.userId));
+    } else {
+      await appDb
+        .update(usersTable)
+        .set({ password: hashedPassword })
+        .where(eq(usersTable.id, authUser.userId));
+    }
+
+    // log the user out
+    clearTokens(res);
+
+    sendSuccess(res, null, 'Password changed successfully');
+  } catch (error) {
+    console.log('Error in changePasswordController:', error);
+    return next(error);
+  }
+};
+
+const clearTokens = (res: Response) => {
+  res.clearCookie('access_token');
+  res.clearCookie('refresh_token');
+  res.clearCookie('seller_access_token');
+  res.clearCookie('seller_refresh_token');
+  res.clearCookie('admin_access_token');
+  res.clearCookie('admin_refresh_token');
 };

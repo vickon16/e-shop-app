@@ -33,6 +33,7 @@ import {
   lte,
   or,
   ordersTable,
+  productDiscountCodesTable,
   productsTable,
   shopsTable,
   sql,
@@ -82,7 +83,9 @@ export const createProductController = async (
       throw new NotFoundError('Seller not found');
     }
 
-    if (!seller.shopId) {
+    const shopId = seller.shopId;
+
+    if (!shopId) {
       throw new BadRequestError('Seller has not created a shop yet');
     }
 
@@ -91,27 +94,52 @@ export const createProductController = async (
       ? body.tags.split(',').map((tag) => tag.toLowerCase())
       : [];
 
-    const discountCodes = Array.isArray(body.discountCodes)
-      ? body.discountCodes
-      : [];
-
     // create new product
-    const newProductArray = await appDb
-      .insert(productsTable)
-      .values({
-        ...body,
-        tags,
-        stock: parseInt(body.stock),
-        discountCodes,
-        shopId: seller.shopId,
-        sellerId: seller.id,
-      })
-      .returning();
 
-    const newProduct = newProductArray?.[0];
-    if (!newProduct) {
-      throw new BadRequestError('Failed to create product');
-    }
+    const newProduct = await appDb.transaction(async (trx) => {
+      const { discountCodes, ...rest } = body;
+
+      const newProductArray = await trx
+        .insert(productsTable)
+        .values({
+          ...rest,
+          tags,
+          stock: parseInt(rest.stock),
+          shopId,
+          sellerId: seller.id,
+        })
+        .returning();
+
+      const newProduct = newProductArray?.[0];
+      if (!newProduct) {
+        throw new BadRequestError('Failed to create product');
+      }
+
+      // create discount codes
+      if (Array.isArray(discountCodes) && discountCodes.length > 0) {
+        const validDiscounts = await trx.query.discountCodesTable.findMany({
+          where: (table, { inArray, and, eq }) =>
+            and(
+              inArray(table.id, discountCodes),
+              eq(table.sellerId, seller.id),
+              eq(table.isActive, true),
+            ),
+        });
+
+        if (validDiscounts.length === 0) {
+          throw new BadRequestError('Invalid discount codes provided');
+        }
+
+        await trx.insert(productDiscountCodesTable).values(
+          discountCodes.map((discountId: string) => ({
+            productId: newProduct.id,
+            discountCodeId: discountId,
+          })),
+        );
+      }
+
+      return newProduct;
+    });
 
     // create images for product
     await Promise.all(
@@ -120,7 +148,7 @@ export const createProductController = async (
           ...image,
           productId: newProduct.id,
           sellerId: seller.id,
-          shopId: seller.shopId,
+          shopId,
         });
       }),
     );
@@ -205,11 +233,12 @@ export const getAllProductsController = async (
     await paginationDtoWrapper(req, async (paginationDto) => {
       const { page, limit, order } = paginationDto;
       const type = (req.query.type || 'latest') as TProductQueryType;
+      const isAdmin = Boolean(req.query.isAdmin) || false;
       const skip = (page - 1) * limit;
 
       const baseWhere = or(
-        isNull(productsTable.startingDate),
-        isNull(productsTable.endingDate),
+        isAdmin ? undefined : isNull(productsTable.startingDate),
+        isAdmin ? undefined : isNull(productsTable.endingDate),
       );
 
       const orderFunc = order === Order.ASC ? asc : desc;
@@ -875,6 +904,110 @@ export const deleteProductImageController = async (
     sendSuccess(res, null, 'Successfully deleted product image');
   } catch (error) {
     console.log('Error in deleteProductImage:', error);
+    return next(error);
+  }
+};
+
+// Delete shop
+export const deleteShopController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const seller = await getSellerBy('id', authUser.userId);
+
+    if (!seller || !seller.shopId) {
+      throw new NotFoundError('Shop not found');
+    }
+
+    const shop = await appDb.query.shopsTable.findFirst({
+      where: eq(shopsTable.id, seller.shopId),
+    });
+
+    if (!shop) {
+      throw new NotFoundError('Shop not found');
+    }
+
+    if (shop.deletedAt) {
+      throw new BadRequestError('Shop is already deleted');
+    }
+
+    const deletedShop = await appDb
+      .update(shopsTable)
+      .set({
+        deletedAt: new Date(),
+      })
+      .where(eq(shopsTable.id, shop.id))
+      .returning();
+
+    if (!deletedShop?.[0]) {
+      throw new InternalServerError('Something went wrong when deleting shop');
+    }
+
+    sendSuccess(
+      res,
+      {
+        deletedAt: deletedShop[0].deletedAt,
+      },
+      'Shop is scheduled for deletion in 28 days. You can restore it within this time',
+    );
+  } catch (error) {
+    console.log('Error in deleteShopController:', error);
+    return next(error);
+  }
+};
+
+// Restore shop
+export const restoreShopController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const authUser = req.user;
+    if (!authUser) {
+      throw new AuthError('Unauthorized');
+    }
+
+    const seller = await getSellerBy('id', authUser.userId);
+
+    if (!seller || !seller.shopId) {
+      throw new NotFoundError('Shop not found');
+    }
+
+    const shop = await appDb.query.shopsTable.findFirst({
+      where: eq(shopsTable.id, seller.shopId),
+    });
+
+    if (!shop) {
+      throw new NotFoundError('Shop not found');
+    }
+
+    if (!shop.deletedAt) {
+      throw new BadRequestError('Shop is not deleted. No need to restore');
+    }
+
+    const restoredShop = await appDb
+      .update(shopsTable)
+      .set({
+        deletedAt: null,
+      })
+      .where(eq(shopsTable.id, shop.id))
+      .returning();
+
+    if (!restoredShop?.[0]) {
+      throw new InternalServerError('Something went wrong when restoring shop');
+    }
+
+    sendSuccess(res, restoredShop, 'Shop has been successfully restored');
+  } catch (error) {
+    console.log('Error in restoreShopController:', error);
     return next(error);
   }
 };

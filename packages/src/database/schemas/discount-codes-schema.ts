@@ -1,7 +1,15 @@
-import { pgTable, uuid, text, timestamp, numeric } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  numeric,
+  boolean,
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { sellersTable } from './index.js';
 import { discountTypes } from '../../constants/index.js';
+import { productDiscountCodesTable } from './product-discount-codes-schema.js';
 
 export const discountCodesTable = pgTable('discount_codes', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -20,16 +28,19 @@ export const discountCodesTable = pgTable('discount_codes', {
       onDelete: 'cascade',
     }),
 
+  isActive: boolean('is_active').default(true).notNull(),
+
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 export const discountCodesRelations = relations(
   discountCodesTable,
-  ({ one }) => ({
+  ({ one, many }) => ({
     seller: one(sellersTable, {
       fields: [discountCodesTable.sellerId],
       references: [sellersTable.id],
     }),
+    productDiscounts: many(productDiscountCodesTable),
   }),
 );

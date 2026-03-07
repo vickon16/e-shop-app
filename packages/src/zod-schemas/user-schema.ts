@@ -1,3 +1,4 @@
+import { userRoles } from '../constants/other-constants.js';
 import { z } from './base-zod.js';
 
 export const shippingAddressSchema = z.object({
@@ -36,3 +37,16 @@ export const shippingAddressSchema = z.object({
 });
 
 export type TShippingAddressSchema = z.infer<typeof shippingAddressSchema>;
+
+export const addNewAdminSchema = z.object({
+  email: z.email('Invalid email').openapi({
+    description: 'Email of the admin',
+    example: 'johndoe@gmail.com',
+  }),
+  role: z.enum(userRoles).openapi({
+    description: 'Role of the admin',
+    example: 'admin',
+  }),
+});
+
+export type TAddNewAdminSchema = z.infer<typeof addNewAdminSchema>;

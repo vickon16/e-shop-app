@@ -6,6 +6,7 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { TUserRoles } from 'src/constants/other-constants.js';
 import { avatarTable } from './avatar-schema.js';
 
 export const usersTable = pgTable('users', {
@@ -17,6 +18,8 @@ export const usersTable = pgTable('users', {
   emailVerified: text('email_verified'),
 
   avatarId: uuid('avatar_id').references((): AnyPgColumn => avatarTable.id),
+
+  role: text('role').$type<TUserRoles[number]>().notNull().default('user'),
 
   following: text('following').array().notNull().default([]),
 

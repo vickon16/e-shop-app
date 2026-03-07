@@ -6,6 +6,7 @@ import {
 import { RouteContract } from '@e-shop-app/packages/types/base.type';
 import {
   baseApiResponse,
+  changePasswordSchema,
   createSellerSchema,
   createShopSchema,
   createStripeConnectLinkSchema,
@@ -250,5 +251,16 @@ export const logoutContract = {
   method: 'get',
   path: '/api/auth/logout-user',
   routePath: '/logout-user',
+  otherMiddlewares: [isCombinedAuthenticatedMiddleware],
+} as const satisfies RouteContract;
+
+export const changePasswordContract = {
+  ...baseContract,
+  method: 'post',
+  path: '/api/auth/change-password',
+  routePath: '/change-password',
+  request: {
+    body: changePasswordSchema,
+  },
   otherMiddlewares: [isCombinedAuthenticatedMiddleware],
 } as const satisfies RouteContract;

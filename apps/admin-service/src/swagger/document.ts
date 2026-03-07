@@ -1,0 +1,15 @@
+import { OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
+import { registry } from '@e-shop-app/packages/libs/swagger';
+
+import '../routes/admin.router';
+
+export const openApiDocument = new OpenApiGeneratorV3(
+  registry.definitions,
+).generateDocument({
+  openapi: '3.0.0',
+  info: {
+    title: 'Admin Service API',
+    description: 'Admin service for managing user and seller orders',
+    version: '1.0.0',
+  },
+});

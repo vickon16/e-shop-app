@@ -94,11 +94,11 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
               if (discountedItem) {
                 const salePrice = Number(discountedItem?.salePrice || 0);
                 const quantity = discountedItem.quantity || 1;
-                const discountPercent = coupon.discountPercent;
+                const discountValue = coupon.discountValue;
 
                 discount =
-                  coupon.discountPercent > 0
-                    ? (salePrice * quantity * discountPercent) / 100
+                  discountValue > 0
+                    ? (salePrice * quantity * discountValue) / 100
                     : coupon.discountAmount;
 
                 orderTotal -= discount;
@@ -131,7 +131,8 @@ export const orderEventHandler = async (res: Response, event: Stripe.Event) => {
                 userId,
                 shopId,
                 total: orderTotal,
-                status: 'paid',
+                paymentStatus: 'paid',
+                orderStatus: 'Processing',
                 shippingAddressId: shippingAddressId || null,
                 couponCode: coupon?.code || null,
                 discountAmount: discount,

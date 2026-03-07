@@ -85,6 +85,7 @@ export const HeaderBottom = () => {
               key={item.href}
               href={item.href}
               className="px-5 font-medium font-roboto"
+              target={item.title === 'Become A Seller' ? '_blank' : '_self'}
             >
               {item.title}
             </Link>

@@ -9,7 +9,9 @@ export const setCookie = (
     | 'access_token'
     | 'refresh_token'
     | 'seller_access_token'
-    | 'seller_refresh_token',
+    | 'seller_refresh_token'
+    | 'admin_access_token'
+    | 'admin_refresh_token',
   cookieValue: string,
 ) => {
   const accessTokenMaxAge = 15 * 60 * 1000; // 15 mins
@@ -19,6 +21,11 @@ export const setCookie = (
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'none' : 'lax',
-    maxAge: type === 'access_token' ? accessTokenMaxAge : refreshTokenMaxAge,
+    maxAge:
+      type === 'access_token' ||
+      type === 'seller_access_token' ||
+      type === 'admin_access_token'
+        ? accessTokenMaxAge
+        : refreshTokenMaxAge,
   });
 };

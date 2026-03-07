@@ -6,5 +6,5 @@ export const navItems: NavItemTypes[] = [
   { title: 'Products', href: Routes.product },
   { title: 'Shops', href: Routes.shop },
   { title: 'Offers', href: Routes.offer },
-  { title: 'Become A Seller', href: Routes.becomeSeller },
+  { title: 'Become A Seller', href: `${Routes.sellerAppUrl}/auth/signup` },
 ];

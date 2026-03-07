@@ -38,6 +38,7 @@ export const env = {
   ),
   KAFKA_SERVICE_URL: requireEnv('KAFKA_SERVICE_URL', 'http://localhost:4003'),
   ORDER_SERVICE_URL: requireEnv('ORDER_SERVICE_URL', 'http://localhost:4004'),
+  ADMIN_SERVICE_URL: requireEnv('ADMIN_SERVICE_URL', 'http://localhost:4005'),
 
   // Ports
   GATEWAY_PORT: Number(requireEnv('GATEWAY_PORT', '4000')),
@@ -45,6 +46,7 @@ export const env = {
   PRODUCT_SERVICE_PORT: Number(requireEnv('PRODUCT_SERVICE_PORT', '4002')),
   KAFKA_SERVICE_PORT: Number(requireEnv('KAFKA_SERVICE_PORT', '4003')),
   ORDER_SERVICE_PORT: Number(requireEnv('ORDER_SERVICE_PORT', '4004')),
+  ADMIN_SERVICE_PORT: Number(requireEnv('ADMIN_SERVICE_PORT', '4005')),
 
   // Email
   SMTP_HOST: requireEnv('SMTP_HOST', ''),
@@ -73,4 +75,5 @@ export const env = {
   // -------------------------------------------------- */
   NEXT_PUBLIC_USER_APP_URL: requireEnv('NEXT_PUBLIC_USER_APP_URL', ''),
   NEXT_PUBLIC_SELLER_APP_URL: requireEnv('NEXT_PUBLIC_SELLER_APP_URL', ''),
+  NEXT_PUBLIC_ADMIN_APP_URL: requireEnv('NEXT_PUBLIC_ADMIN_APP_URL', ''),
 } as const;

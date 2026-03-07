@@ -12,6 +12,9 @@ import {
   productAnalyticsTable,
   userAnalyticsActionsTable,
   addressTable,
+  ordersTable,
+  orderItemsTable,
+  notificationsTable,
 } from '../database/index.js';
 
 export type TUserWithPassword = InferSelectModel<typeof usersTable>;
@@ -24,7 +27,8 @@ export type TUserWithRelations = TUser & {
 export type TSellerWithPassword = InferSelectModel<typeof sellersTable>;
 export type TSeller = Omit<TSellerWithPassword, 'password'>;
 export type TSellerWithRelations = TSeller & {
-  shop: TShop;
+  shop?: TShop;
+  avatar?: TAvatar;
 };
 
 export type TShop = InferSelectModel<typeof shopsTable>;
@@ -36,7 +40,7 @@ export type TShopWithRelations = TShop & {
 
 export type TProduct = Omit<
   InferSelectModel<typeof productsTable>,
-  'createdAt' | 'updatedAt' | 'startingDate' | 'endingDate'
+  'createdAt' | 'updatedAt'
 > & {
   createdAt: string;
   updatedAt: string;
@@ -65,3 +69,19 @@ export type TUserAnalyticsAction = InferSelectModel<
 export type TProductAnalytics = InferSelectModel<typeof productAnalyticsTable>;
 
 export type TUserAddress = InferSelectModel<typeof addressTable>;
+
+export type TOrder = InferSelectModel<typeof ordersTable>;
+export type TOrderItem = InferSelectModel<typeof orderItemsTable>;
+
+export type TOrderWithRelations = TOrder & {
+  shop: TShop;
+  user: TUserWithRelations;
+  shippingAddress?: TUserAddress | null;
+  orderItems: TOrderItemWithRelations[];
+};
+
+export type TOrderItemWithRelations = TOrderItem & {
+  product: TProductWithImagesAndShop;
+};
+
+export type TNotification = InferSelectModel<typeof notificationsTable>;

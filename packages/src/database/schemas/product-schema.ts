@@ -12,6 +12,7 @@ import {
 import { relations } from 'drizzle-orm';
 import { imagesTable, sellersTable, shopsTable } from './index.js';
 import { YesNo, ProductStatus } from '../../constants/index.js';
+import { productDiscountCodesTable } from './product-discount-codes-schema.js';
 
 export const productsTable = pgTable('products', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -58,7 +59,6 @@ export const productsTable = pgTable('products', {
    * ARRAYS
    */
   tags: text('tags').array().notNull(),
-  discountCodes: text('discount_codes').array().notNull(),
 
   customSpecifications: jsonb('custom_specifications')
     .$type<
@@ -100,4 +100,5 @@ export const productsRelations = relations(productsTable, ({ one, many }) => ({
     relationName: 'shop',
   }),
   images: many(imagesTable),
+  productDiscounts: many(productDiscountCodesTable),
 }));
