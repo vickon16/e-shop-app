@@ -39,6 +39,12 @@ export const env = {
   KAFKA_SERVICE_URL: requireEnv('KAFKA_SERVICE_URL', 'http://localhost:4003'),
   ORDER_SERVICE_URL: requireEnv('ORDER_SERVICE_URL', 'http://localhost:4004'),
   ADMIN_SERVICE_URL: requireEnv('ADMIN_SERVICE_URL', 'http://localhost:4005'),
+  CHAT_SERVICE_URL: requireEnv('CHAT_SERVICE_URL', 'http://localhost:4006'),
+  RECOMMENDATION_SERVICE_URL: requireEnv(
+    'RECOMMENDATION_SERVICE_URL',
+    'http://localhost:4007',
+  ),
+  LOGGER_SERVICE_URL: requireEnv('LOGGER_SERVICE_URL', 'http://localhost:4008'),
 
   // Ports
   GATEWAY_PORT: Number(requireEnv('GATEWAY_PORT', '4000')),
@@ -47,6 +53,11 @@ export const env = {
   KAFKA_SERVICE_PORT: Number(requireEnv('KAFKA_SERVICE_PORT', '4003')),
   ORDER_SERVICE_PORT: Number(requireEnv('ORDER_SERVICE_PORT', '4004')),
   ADMIN_SERVICE_PORT: Number(requireEnv('ADMIN_SERVICE_PORT', '4005')),
+  CHAT_SERVICE_PORT: Number(requireEnv('CHAT_SERVICE_PORT', '4006')),
+  RECOMMENDATION_SERVICE_PORT: Number(
+    requireEnv('RECOMMENDATION_SERVICE_PORT', '4007'),
+  ),
+  LOGGER_SERVICE_PORT: Number(requireEnv('LOGGER_SERVICE_PORT', '4008')),
 
   // Email
   SMTP_HOST: requireEnv('SMTP_HOST', ''),

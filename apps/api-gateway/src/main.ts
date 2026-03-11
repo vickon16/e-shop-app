@@ -18,6 +18,9 @@ const productServiceUrl = env.PRODUCT_SERVICE_URL;
 const kafkaServiceUrl = env.KAFKA_SERVICE_URL;
 const orderServiceUrl = env.ORDER_SERVICE_URL;
 const adminServiceUrl = env.ADMIN_SERVICE_URL;
+const chatServiceUrl = env.CHAT_SERVICE_URL;
+const recommendationServiceUrl = env.RECOMMENDATION_SERVICE_URL;
+const loggerServiceUrl = env.LOGGER_SERVICE_URL;
 
 const app = express();
 
@@ -71,6 +74,12 @@ app.use('/api/product', proxyHelper(productServiceUrl, 'product'));
 app.use('/api/kafka', proxyHelper(kafkaServiceUrl, 'kafka'));
 app.use('/api/order', proxyHelper(orderServiceUrl, 'order'));
 app.use('/api/admin', proxyHelper(adminServiceUrl, 'admin'));
+app.use('/api/chat', proxyHelper(chatServiceUrl, 'chat'));
+app.use(
+  '/api/recommendation',
+  proxyHelper(recommendationServiceUrl, 'recommendation'),
+);
+app.use('/api/logger', proxyHelper(loggerServiceUrl, 'logger'));
 
 // Uncomment this if the gateway have its own routes
 // app.use(express.json({ limit: '100mb' }));

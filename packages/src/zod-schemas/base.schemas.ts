@@ -1,4 +1,4 @@
-import { Order } from '../utils/base.utils.js';
+import { Order, type TOrder } from '../constants/other-constants.js';
 import { z } from './base-zod.js';
 
 export const emailSchema = z.object({
@@ -99,7 +99,7 @@ export const priceSchema = z
     'Price must be a valid number and at least 0',
   );
 
-const orderArray = [Order.ASC, Order.DESC] as const satisfies Order[];
+const orderArray = [Order.ASC, Order.DESC] as const satisfies TOrder[];
 
 export const paginatedDtoSchema = z.object({
   page: z.number().int().openapi({

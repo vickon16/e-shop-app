@@ -2,12 +2,14 @@ import { z } from '../../zod-schemas/base-zod.js';
 
 export const KafkaGroups = {
   USERS_EVENTS_GROUP: 'users-events-group',
+  CHATS_EVENTS_GROUP: 'chats-events-group',
 };
 
 export const KafkaTopics = {
   USER_EVENTS: 'users.events',
   ORDER_CREATED: 'order.created',
   PAYMENT_COMPLETED: 'payment.completed',
+  CHAT_NEW_MESSAGE: 'chat.new-message',
 };
 
 const kakfaProductEventActions = [
@@ -58,3 +60,30 @@ export const kafkaProductEventSchema = z.object({
 export type TKafkaProductEventSchemaType = z.infer<
   typeof kafkaProductEventSchema
 >;
+
+export const kafkaChatEventActions = ['mark-as-seen', 'new-message'] as const;
+
+// export const kafkaChatEventSchema = z.object({
+//   action: z.enum(kafkaChatEventActions).openapi({
+//     description: 'Type of chat action being tracked',
+//     example: 'mark-as-seen',
+//   }),
+//   conversationId: z.string().openapi({
+//     description: 'ID of the conversation involved in the event',
+//     example: '123e4567-e89b-12d3-a456-426614174000',
+//   }),
+//   senderId: z.string().openapi({
+//     description: 'ID of the sender involved in the event',
+//     example: '123e4567-e89b-12d3-a456-426614174000',
+//   }),
+//   messageBody: z.string().openapi({
+//     description: 'Body of the message involved in the event',
+//     example: 'Hello, how are you?',
+//   }),
+//   createdAt: z.string().openapi({
+//     description: 'ISO string timestamp of when the event occurred',
+//     example: '2024-01-01T12:00:00Z',
+//   }),
+// });
+
+// export type TKafkaChatEventSchemaType = z.infer<typeof kafkaChatEventSchema>;

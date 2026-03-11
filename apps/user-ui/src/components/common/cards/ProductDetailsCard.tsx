@@ -1,21 +1,27 @@
 'use client';
 import { Routes } from '@/configs/routes';
 import type {
+  TConversation,
   TProductWithImagesAndShop,
   TUser,
 } from '@e-shop-app/packages/types';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import { Ratings } from '../Ratings';
 import { LuHeart, LuMapPin } from 'react-icons/lu';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, errorToast } from '@/lib/utils';
 import { FaCartPlus } from 'react-icons/fa';
 import { useAppStore } from '@/store';
 import { useLocationTracking } from '@/hooks/use-location-tracking';
 import { useDeviceInfo } from '@/hooks/use-device-tracking';
-import { useSendKafkaEvent } from '@/actions/mutations/base.mutation';
+import {
+  useBaseMutation,
+  useSendKafkaEvent,
+} from '@/actions/mutations/base.mutation';
+import { TCreateNewConversationSchema } from '@e-shop-app/packages/zod-schemas';
+import { useRouter } from 'next/navigation';
 
 type Props = {
   product: TProductWithImagesAndShop;
@@ -32,6 +38,8 @@ export const ProductDetailsCard = (props: Props) => {
   const [isSelectedSize, setIsSelectedSize] = useState<string | null>(
     product?.sizes?.[0] || null,
   );
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const { location } = useLocationTracking();
   const { deviceInfo } = useDeviceInfo();
@@ -55,6 +63,40 @@ export const ProductDetailsCard = (props: Props) => {
 
   const estimatedDelivery = new Date();
   estimatedDelivery.setDate(estimatedDelivery.getDate() + 7); // Assuming delivery takes 7 days
+
+  const conversationMutation = useBaseMutation<
+    TCreateNewConversationSchema,
+    {
+      conversation: TConversation;
+      isNew: boolean;
+    }
+  >({
+    endpoint: '/chat/create-new-conversation',
+  });
+
+  const handleChat = () => {
+    startTransition(async () => {
+      try {
+        const response = await conversationMutation.mutateAsync({
+          name: `Conversation with ${product?.shop?.name || 'Shop'}`,
+          memberId: product?.sellerId,
+          memberType: 'seller',
+        });
+
+        if (!response?.success || !response?.data?.conversation?.id) {
+          throw new Error(response?.message);
+        }
+
+        router.push(
+          `${Routes.inbox}?conversationId=${response?.data?.conversation?.id}`,
+        );
+      } catch (error) {
+        errorToast(error, 'Failed to create conversation. Please try again');
+      }
+    });
+  };
+
+  const isLoadingConversation = conversationMutation.isPending || isPending;
 
   return (
     <div className="w-full grid sm:grid-cols-2 md:grid-cols-3">
@@ -130,12 +172,13 @@ export const ProductDetailsCard = (props: Props) => {
             </p>
           </div>
 
-          <Link
-            className={buttonVariants({ size: 'sm' })}
-            href={`${Routes.inbox}?shopId=${product.shopId}`}
+          <Button
+            size="sm"
+            onClick={handleChat}
+            isLoading={isLoadingConversation}
           >
             Chat with Seller
-          </Link>
+          </Button>
         </div>
 
         <div className="space-y-2">

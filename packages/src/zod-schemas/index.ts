@@ -4,3 +4,4 @@ export * from './base-zod.js';
 export * from './product-schema.js';
 export * from './user-schema.js';
 export * from './order-schema.js';
+export * from './chat-schema.js';

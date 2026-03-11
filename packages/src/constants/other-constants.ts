@@ -1,5 +1,7 @@
 export const YesNo = ['Yes', 'No'] as const;
 
+export const userAccountTypes = ['user', 'seller', 'admin'] as const;
+
 export const userRoles = ['user', 'admin', 'super-admin'] as const;
 export type TUserRoles = (typeof userRoles)[number];
 
@@ -61,3 +63,10 @@ export const ORDER_STATUSES: TOrderStatus[] = [
   'Out for Delivery',
   'Delivered',
 ];
+
+export const Order = {
+  ASC: 'ASC',
+  DESC: 'DESC',
+} as const;
+
+export type TOrder = (typeof Order)[keyof typeof Order];

@@ -1,17 +1,18 @@
-import { RequestHandler } from 'express';
-import { TBaseApiResponse } from 'src/zod-schemas/base.schemas.js';
-import {
-  type ControllerRenderProps,
-  type FieldValues,
-  type Path,
-} from 'react-hook-form';
 import {
   ParameterObject,
   ReferenceObject,
 } from '@asteasolutions/zod-to-openapi/dist/types.js';
 import type { Row } from '@tanstack/react-table';
-import { TUserAnalyticsAction } from './drizzle.type.js';
 import { AxiosRequestConfig } from 'axios';
+import { RequestHandler } from 'express';
+import {
+  type ControllerRenderProps,
+  type FieldValues,
+  type Path,
+} from 'react-hook-form';
+import { TBaseApiResponse } from 'src/zod-schemas/base.schemas.js';
+import { TMessage, TUserAnalyticsAction } from './drizzle.type.js';
+import { userAccountTypes } from 'src/constants/other-constants.js';
 
 export type TTableMeta = {
   page: number;
@@ -71,7 +72,7 @@ export interface RouteContract {
   otherMiddlewares?: Array<RequestHandler>;
 }
 
-export type TUserAccountType = 'user' | 'seller' | 'admin' | 'combined';
+export type TUserAccountType = (typeof userAccountTypes)[number] | 'combined';
 
 export interface JwtPayload {
   userId: string;
@@ -115,3 +116,28 @@ export type TCustomUserAnalyticsAction = Omit<
   TUserAnalyticsAction,
   'id' | 'createdAt' | 'updatedAt' | 'analyticsId'
 >;
+
+export type TMessageStatus = 'sent' | 'delivered' | 'seen';
+
+export type TChatIncomingMessage = {
+  type: 'MARK_AS_SEEN' | 'NEW_MESSAGE';
+  fromUserId: string;
+  toUserId: string;
+  messageBody: string;
+  conversationId: string;
+  senderType: 'user' | 'seller';
+};
+
+export type TWebSocketNewMessageType = {
+  type: 'NEW_MESSAGE';
+  payload: Omit<TMessage, 'id' | 'attachments' | 'updatedAt' | 'status'>;
+};
+
+export type TWebSocketUnseenCountUpdateType = {
+  type: 'UNSEEN_COUNT_UPDATE';
+  payload: Pick<TChatIncomingMessage, 'conversationId'> & { count: number };
+};
+
+export type TWebSocketMessageEvent =
+  | TWebSocketNewMessageType
+  | TWebSocketUnseenCountUpdateType;

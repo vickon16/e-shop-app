@@ -15,6 +15,9 @@ import {
   ordersTable,
   orderItemsTable,
   notificationsTable,
+  conversationTable,
+  messageTable,
+  participantTable,
 } from '../database/index.js';
 
 export type TUserWithPassword = InferSelectModel<typeof usersTable>;
@@ -85,3 +88,7 @@ export type TOrderItemWithRelations = TOrderItem & {
 };
 
 export type TNotification = InferSelectModel<typeof notificationsTable>;
+
+export type TConversation = InferSelectModel<typeof conversationTable>;
+export type TMessage = InferSelectModel<typeof messageTable>;
+export type TParticipant = InferSelectModel<typeof participantTable>;

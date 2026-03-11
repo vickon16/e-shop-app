@@ -30,6 +30,11 @@ export const setupKafkaTopics = async () => {
         replicationFactor: 1,
       },
       {
+        topic: KafkaTopics.CHAT_NEW_MESSAGE,
+        numPartitions: 6,
+        replicationFactor: 1,
+      },
+      {
         topic: KafkaTopics.ORDER_CREATED,
         numPartitions: 6,
         replicationFactor: 1,

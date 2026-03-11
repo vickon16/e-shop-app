@@ -1,14 +1,17 @@
+import { TWebSocketNewMessageType } from 'src/types/base.type.js';
 import { kafka } from './client.js';
 import {
-  TKafkaProductEventSchemaType,
   KafkaGroups,
   KafkaTopics,
+  TKafkaProductEventSchemaType,
 } from './constants.js';
-import { eventHandlers } from './handlers.js';
+import { productEventHandlers } from './handlers.js';
+import { chatBufferService } from './service-workers/chat.service.js';
 
 export const startWorker = async (
   groupId: keyof typeof KafkaGroups,
   topics: (keyof typeof KafkaTopics)[],
+  type: 'product' | 'chat',
   fromBeginning = false,
 ) => {
   const consumer = kafka.consumer({ groupId: KafkaGroups[groupId] });
@@ -33,25 +36,30 @@ export const startWorker = async (
       for (const message of batch.messages) {
         if (!message.value) continue;
 
-        const event = JSON.parse(
-          message.value.toString(),
-        ) as TKafkaProductEventSchemaType;
-
-        const handler = eventHandlers[event.action];
-
-        if (!handler) {
-          console.warn('Unknown event:', event.action);
-          continue;
-        }
-
-        console.log('Received event:', event);
+        let event;
 
         try {
-          await handler(event);
+          if (type === 'product') {
+            event = JSON.parse(
+              message.value.toString(),
+            ) as TKafkaProductEventSchemaType;
+
+            const handler = productEventHandlers[event.action];
+
+            console.log('Received product event:', event);
+            await handler(event);
+          } else if (type === 'chat') {
+            event = JSON.parse(
+              message.value.toString(),
+            ) as TWebSocketNewMessageType['payload'];
+
+            console.log('Received chat event:', event);
+            await chatBufferService.add(event);
+          }
+
           resolveOffset(message.offset);
         } catch (err) {
           console.error('Handler failed:', err);
-          throw err;
         }
 
         // After processing each message, we call heartbeat to ensure the consumer session stays active. If processing takes a long time, this prevents Kafka from thinking the consumer is dead and reassigning its partitions.

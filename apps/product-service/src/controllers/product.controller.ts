@@ -8,10 +8,11 @@ import {
 } from '@e-shop-app/packages/error-handler';
 import {
   getSellerBy,
-  Order,
+  paginationDtoWrapper,
   PaginationResultDto,
   sendSuccess,
 } from '@e-shop-app/packages/utils';
+import { Order } from '@e-shop-app/packages/constants';
 import { NextFunction, Request, Response } from 'express';
 
 import {
@@ -196,26 +197,6 @@ export const getShopProductController = async (
     console.log('Error in getShopProductController:', error);
     return next(error);
   }
-};
-
-const paginationDtoWrapper = async (
-  req: Request,
-  callback: (paginatedData: TPaginatedDTOSchema) => Promise<void>,
-) => {
-  const paginationDto = paginatedDtoSchema.safeParse({
-    page: parseInt(req.query.page as string) || 1,
-    limit: parseInt(req.query.limit as string) || 20,
-    order: (req.query.order as Order) || Order.DESC,
-  });
-
-  if (!paginationDto.success) {
-    throw new ValidationError(
-      'Invalid query parameters',
-      paginationDto.error.message,
-    );
-  }
-
-  return await callback(paginationDto.data);
 };
 
 // Get all products

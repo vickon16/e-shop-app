@@ -11,3 +11,4 @@ export * from './order-schema.js';
 export * from './address-schema.js';
 export * from './notifications-schema.js';
 export * from './product-discount-codes-schema.js';
+export * from './message-schema.js';

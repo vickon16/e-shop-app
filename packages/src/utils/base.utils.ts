@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from '../error-handler/base.js';
 import { ApiSuccessResponse, TParams } from '../types/base.type.js';
 import { z } from 'zod';
+import {
+  paginatedDtoSchema,
+  TPaginatedDTOSchema,
+} from '../zod-schemas/base.schemas.js';
+import { Order, TOrder } from '../constants/other-constants.js';
 
 export function sendSuccess<T>(
   res: Response,
@@ -38,13 +43,8 @@ export const validate =
     next();
   };
 
-export enum Order {
-  ASC = 'ASC',
-  DESC = 'DESC',
-}
-
 export class PaginationDto {
-  readonly order: Order = Order.DESC;
+  readonly order: TOrder = Order.DESC;
 
   readonly page: number = 1;
 
@@ -117,3 +117,23 @@ export const paginationDtoQueryArray: TParams[] = [
     },
   },
 ];
+
+export const paginationDtoWrapper = async (
+  req: Request,
+  callback: (paginatedData: TPaginatedDTOSchema) => Promise<void>,
+) => {
+  const paginationDto = paginatedDtoSchema.safeParse({
+    page: parseInt(req.query.page as string) || 1,
+    limit: parseInt(req.query.limit as string) || 20,
+    order: (req.query.order as TOrder) || Order.DESC,
+  });
+
+  if (!paginationDto.success) {
+    throw new ValidationError(
+      'Invalid query parameters',
+      paginationDto.error.message,
+    );
+  }
+
+  return await callback(paginationDto.data);
+};

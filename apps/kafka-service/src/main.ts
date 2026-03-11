@@ -53,7 +53,8 @@ const server = app.listen(port, host, async () => {
   await setupKafkaTopics();
 
   // Consumer group 1
-  await startWorker('USERS_EVENTS_GROUP', ['USER_EVENTS']);
+  await startWorker('USERS_EVENTS_GROUP', ['USER_EVENTS'], 'product');
+  await startWorker('CHATS_EVENTS_GROUP', ['CHAT_NEW_MESSAGE'], 'chat');
 
   // // Consumer group 2
   // await startConsumer('ANALYTICS_GROUP', ['ORDER_CREATED', 'USER_EVENTS']);
